@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base{
+  h1{
+    @apply m-3 font-bold text-lg uppercase;
+  }
+  input{
+    @apply p-2 rounded-md w-full ring;
+  }
+
+}
+
+@layer components{
+  button{
+    @apply p-2 rounded-md bg-blue-400 hover:bg-blue-200 m-2 ;
+  }
+ 
+}
+
+.square:active{
+  background:#000;
+}
+.square:hover{
+  cursor:pointer;
+}

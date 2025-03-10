@@ -1,0 +1,80 @@
+📦src
+ ┣ 📂actions
+ ┃ ┗ 📜authActions.js
+ ┣ 📂assets
+ ┃ ┣ 📜pexels-vlada-karpovich-4050347 (1).png
+ ┃ ┗ 📜react.svg
+ ┣ 📂components
+ ┃ ┣ 📂Basics
+ ┃ ┃ ┣ 📜Counter.jsx
+ ┃ ┃ ┣ 📜CounterReducer.jsx
+ ┃ ┃ ┣ 📜Form.jsx
+ ┃ ┃ ┣ 📜Formik.jsx
+ ┃ ┃ ┣ 📜FormUpload.jsx
+ ┃ ┃ ┣ 📜Output.jsx
+ ┃ ┃ ┣ 📜Patterns.jsx
+ ┃ ┃ ┣ 📜ReactHookForm.jsx
+ ┃ ┃ ┣ 📜ReduxTodoList.jsx
+ ┃ ┃ ┣ 📜Square.jsx
+ ┃ ┃ ┣ 📜TicTacToe.jsx
+ ┃ ┃ ┣ 📜Todo.jsx
+ ┃ ┃ ┣ 📜TodoApp.jsx
+ ┃ ┃ ┗ 📜Todos.jsx
+ ┃ ┗ 📂ChasfatAcademy
+ ┃ ┃ ┣ 📜About.jsx
+ ┃ ┃ ┣ 📜Contact.jsx
+ ┃ ┃ ┣ 📜Footer.jsx
+ ┃ ┃ ┣ 📜Header.jsx
+ ┃ ┃ ┗ 📜Home.jsx
+ ┣ 📂features
+ ┃ ┣ 📂ChasfatAcademy
+ ┃ ┃ ┣ 📂darkmode
+ ┃ ┃ ┃ ┗ 📜darkModeSlice.js
+ ┃ ┃ ┣ 📂filters
+ ┃ ┃ ┃ ┗ 📜filtersSlice.js
+ ┃ ┃ ┣ 📂quiz
+ ┃ ┃ ┃ ┣ 📜quizData.js
+ ┃ ┃ ┃ ┗ 📜quizSlice.js
+ ┃ ┃ ┗ 📂timer
+ ┃ ┃ ┃ ┗ 📜timerSlice.js
+ ┃ ┣ 📂filters
+ ┃ ┃ ┗ 📜filtersSlice.js
+ ┃ ┗ 📂todos
+ ┃ ┃ ┗ 📜todosSlice.js
+ ┣ 📂hooks
+ ┃ ┗ 📂ChasfatAcademy
+ ┃ ┃ ┗ 📜useTimer.js
+ ┣ 📂pages
+ ┃ ┗ 📂ChasfatAcademy
+ ┃ ┃ ┣ 📜BulkRegister.jsx
+ ┃ ┃ ┣ 📜CreateCourse.jsx
+ ┃ ┃ ┣ 📜CreateExam.jsx
+ ┃ ┃ ┣ 📜CreateQuestion.jsx
+ ┃ ┃ ┣ 📜ExamCreation.jsx
+ ┃ ┃ ┣ 📜ImageUploadQuestion.jsx
+ ┃ ┃ ┣ 📜ListExam.jsx
+ ┃ ┃ ┣ 📜ListQuestion.jsx
+ ┃ ┃ ┣ 📜LoginForm.jsx
+ ┃ ┃ ┣ 📜LogoutForm.jsx
+ ┃ ┃ ┣ 📜Manage.jsx
+ ┃ ┃ ┣ 📜Onboarding.jsx
+ ┃ ┃ ┣ 📜RegisterStudentsForm.jsx
+ ┃ ┃ ┣ 📜RegistrationForm.jsx
+ ┃ ┃ ┣ 📜StudentRegistration.jsx
+ ┃ ┃ ┣ 📜TrialExamHeader.jsx
+ ┃ ┃ ┣ 📜TrialQuestion.jsx
+ ┃ ┃ ┣ 📜TrialQuestionNavigation.jsx
+ ┃ ┃ ┣ 📜TrialQuiz.jsx
+ ┃ ┃ ┣ 📜TrialQuizDemoEnhanced.jsx
+ ┃ ┃ ┣ 📜TrialQuizQuestionEnhanced.jsx
+ ┃ ┃ ┗ 📜TrialQuizResult.jsx
+ ┣ 📂store
+ ┃ ┣ 📜authSlice.js
+ ┃ ┣ 📜schoolSlice.js
+ ┃ ┗ 📜trial_quizSlice.js
+ ┣ 📜App.css
+ ┣ 📜App.jsx
+ ┣ 📜axios.js
+ ┣ 📜index.css
+ ┣ 📜main.jsx
+ ┗ 📜store.js
