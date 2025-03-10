@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// User table to track users (both exam creators/admins and students)
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // Hashed password
+  email     String   @unique
+  matricNo  String?  @unique  // For students only (nullable for exam creators)
+  firstName String?
+  lastName  String?
+  role      String   @default("exam_creator") // Default role is 'exam_creator'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  examsCreated Exam[]          // Exams created by this user (exam creators)
+  registrations ExamRegistration[]  // Exams this user (student) is registered for
+
+  @@map("prisma_user") // Table name 'prisma_user'
+}
+
+// Exam table to represent individual exams
+model Exam {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  creatorId   Int      // Foreign key for the user who created the exam (examiner)
+  startTime   DateTime
+  endTime     DateTime
+  timeAllowed Int      // Duration in minutes
+  passcode    String   // Passcode for the exam, if needed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  creator     User     @relation(fields: [creatorId], references: [id])  // Creator of the exam (examiner)
+  questions   Question[] // Questions related to the exam
+  registrations ExamRegistration[] // Students who registered for this exam
+
+  @@map("prisma_exam") // Table name 'prisma_exam'
+}
+
+// Question table to represent each individual question in an exam
+model Question {
+  id        Int      @id @default(autoincrement())
+  examId    Int      // Foreign key to Exam
+  content   String   // The content of the question (could include rich text)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  exam      Exam     @relation(fields: [examId], references: [id])
+  options   QuestionOption[]  // Multiple choice options, if applicable
+
+  @@map("prisma_question") // Table name 'prisma_question'
+}
+
+// QuestionOption table for multiple-choice answers/options
+model QuestionOption {
+  id        Int      @id @default(autoincrement())
+  questionId Int     // Foreign key to Question
+  content   String   // Option content
+  isCorrect Boolean  // Whether the option is the correct answer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  question  Question @relation(fields: [questionId], references: [id])
+
+  @@map("prisma_question_option") // Table name 'prisma_question_option'
+}
+
+// ExamRegistration table to track student registrations for exams
+model ExamRegistration {
+  id           Int      @id @default(autoincrement())
+  userId       Int      // Foreign key to User (Student)
+  examId       Int      // Foreign key to Exam
+  status       String   // Registered, completed, etc.
+  passcode     String?  // Passcode generated for this student for the exam
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  user         User     @relation(fields: [userId], references: [id])  // Student
+  exam         Exam     @relation(fields: [examId], references: [id])  // Exam
+  results      Result[]  // One-to-many relation (multiple results for one registration)
+
+  @@map("prisma_exam_registration") // Table name 'prisma_exam_registration'
+}
+
+// Result table to track the student's performance in an exam
+model Result {
+  id            Int              @id @default(autoincrement())
+  registrationId Int             // Foreign key to ExamRegistration
+  score         Float            // Score obtained in the exam
+  passed        Boolean          // Whether the student passed the exam
+  gradedAt      DateTime         @default(now()) // Date of grading
+
+  // Relationships
+  registration  ExamRegistration @relation(fields: [registrationId], references: [id]) // Relation to ExamRegistration
+
+  @@map("prisma_result") // Custom table name 'prisma_result'
+}

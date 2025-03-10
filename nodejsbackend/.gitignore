@@ -1,0 +1,20 @@
+.env
+
+node_modules/
+
+# Logs
+logs
+*.log
+
+# Build outputs
+dist/
+build/
+
+
+prisma/migrations/
+
+package-lock.json 
+
+config/
+
+uploads/

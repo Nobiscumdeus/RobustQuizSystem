@@ -1,0 +1,150 @@
+// Define the database provider and the datasource
+datasource db {
+  provider = "postgresql" // Use PostgreSQL as the database provider
+  url      = env("DATABASE_URL") // Database URL from the .env file
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  email     String    @unique
+  firstName String?
+  password  String
+  role      String // 'examiner' or 'student'
+  students  Student[] // Relationship: A user can have multiple students if they are an examiner
+  exams     Exam[] // Relationship: A user can create multiple exams if they are an examiner
+  createdAt DateTime  @default(now()) // Timestamp when the user is created
+  updatedAt DateTime  @updatedAt // Automatically updated when the user is modified
+  courses   Course[]  @relation("CourseExaminer") // If this user is an examiner, they can have multiple courses
+}
+
+model Student {
+  id         Int          @id @default(autoincrement())
+  matricNo   String       @unique
+  firstName  String
+  lastName   String
+  examinerId Int
+  examiner   User         @relation(fields: [examinerId], references: [id])
+  exams      Exam[]       @relation("ExamStudents") // Relationship to exams (define reverse relation in Exam)
+  results    ExamResult[] // Relationship to exam results
+  courses    Course[] // Many-to-many relationship with courses
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Exam {
+  id         Int          @id @default(autoincrement())
+  title      String
+  date       DateTime
+  password   String
+  duration   Int // Duration in minutes
+  examinerId Int
+  examiner   User         @relation(fields: [examinerId], references: [id]) // Relationship to examiner (User)
+  questions  Question[] // One exam can have many questions
+  students   Student[]    @relation("ExamStudents") // Many-to-many relationship with students
+  results    ExamResult[] // One exam can have many results (students' results)
+  courseId   Int
+  course     Course       @relation(fields: [courseId], references: [id]) // Relationship to the Course
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Question {
+  id            Int               @id @default(autoincrement())
+  examId        Int
+  exam          Exam              @relation(fields: [examId], references: [id])
+  questionText  String
+  questionType  QuestionType
+  options       String[]
+  correctAnswer String
+  imageUrl      String?
+  category      CategoryType
+  tags          String[]
+  difficulty    String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  answers       Answer[]
+    
+}
+
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  IMAGE_UPLOAD
+  FILL_IN_THE_BLANK
+}
+
+enum CategoryType {
+  SCIENCE
+  ENGINEERING
+  ARTS_HUMANITIES
+  SOCIAL_SCIENCES
+  BUSINESS_MANAGEMENT
+  GEOGRAPHY
+  LAW
+  MEDICAL_HEALTH_SCIENCES
+  EDUCATION
+  AGRICULTURE
+  ENVIRONMENTAL_SCIENCES
+  COMPUTER_SCIENCE_IT
+  ARCHITECTURE
+  PHILOSOPHY
+  LANGUAGES_LINGUISTICS
+  ECONOMICS
+  MATHEMATICS
+  PHYSICS
+  CHEMISTRY
+  BIOLOGY
+  MUSIC
+}
+
+
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  content    String // The content of the answer
+  isCorrect  Boolean // Whether this answer is correct
+  questionId Int // Relationship to the question this answer belongs to
+  question   Question @relation(fields: [questionId], references: [id]) // Link to the Question model
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  code        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examiner   User      @relation("CourseExaminer", fields: [examinerId], references: [id])
+  examinerId Int // foreign key to the User (examiner)
+  students   Student[] // Many-to-many relation with students
+  exams      Exam[] // One-to-many relation with exams
+}
+
+model ExamResult {
+  id          Int        @id @default(autoincrement())
+  studentId   Int // Relationship to the student who took the exam
+  student     Student    @relation(fields: [studentId], references: [id]) // Link to the Student model
+  examId      Int // Relationship to the exam taken by the student
+  exam        Exam       @relation(fields: [examId], references: [id]) // Link to the Exam model
+  score       Float // Score the student received
+  status      ExamStatus // Status of the exam (e.g., completed, pending)
+  submittedAt DateTime // Timestamp when the exam was submitted
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum ExamStatus {
+  PENDING
+  COMPLETED
+  IN_PROGRESS
+}

@@ -1,0 +1,21 @@
+# Node.js
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+
+# VS Code
+.vscode/
+
+# MacOS system files
+.DS_Store
+
+prisma/migrations/
+
+package-lock.json 
+
+config/
