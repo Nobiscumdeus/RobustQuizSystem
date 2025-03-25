@@ -21,6 +21,8 @@ import { useState, useEffect } from 'react';
 import AdminPanel from "./pages/ChasfatAcademy/AdminPanel";
 
 import CalculatorModal from "./utility/ChasfatAcademy/CalculatorModal";
+import Monitor from "./pages/ChasfatAcademy/Monitor";
+import MonitorDashboard from "./pages/ChasfatAcademy/MonitorDashboard";
 
 
 
@@ -86,6 +88,9 @@ function RoutesWrapper() {
       <Route path="/create_exam" element={<CreateExam />} />
       <Route path="/create_question" element={<CreateQuestionForm />} />
       <Route path="/calculator" element={<CalculatorModal />} />
+      <Route path="/monitor" element={<Monitor/>} />
+      <Route path="/monitor_dashboard" element={<MonitorDashboard/>} />
+      
     </Routes>
   );
 }

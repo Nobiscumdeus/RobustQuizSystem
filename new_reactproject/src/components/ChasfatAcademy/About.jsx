@@ -69,7 +69,7 @@ const AboutPage = () => {
         variants={buttonVariants}
         whileHover="hover"
         animate="visible"
-        exit={{y:-1000}}
+        
           onClick={() => scrollToSection(aboutRef)}
           className={`px-4 py-2 rounded-md ${
             darkMode ? "bg-gray-700 text-gray-100" : "bg-gray-200 text-gray-900"
