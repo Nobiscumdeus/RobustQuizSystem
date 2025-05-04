@@ -1,30 +1,40 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import Header from "./components/ChasfatAcademy/Header";
+import Header from "./components/ChasfatAcademy/shared/Header";
 import Home from "./components/ChasfatAcademy/Home";
-import AboutPage from "./components/ChasfatAcademy/About";
-import Contact from "./components/ChasfatAcademy/Contact";
-import Onboarding from "./pages/ChasfatAcademy/Onboarding";
-import RegistrationForm from "./pages/ChasfatAcademy/RegistrationForm";
-import LoginForm from "./pages/ChasfatAcademy/LoginForm";
-import Manage from "./pages/ChasfatAcademy/Manage";
-import TrialQuizDemo from "./pages/ChasfatAcademy/TrialQuizDemoEnhanced";
-import StudentRegistration from "./pages/ChasfatAcademy/StudentRegistration";
-import ImageUploadQuestion from "./pages/ChasfatAcademy/ImageUploadQuestion";
-import CreateExam from "./pages/ChasfatAcademy/CreateExam";
-import UserProfile from "./pages/ChasfatAcademy/UserProfile";
-import RegisterStudentsForm from "./pages/ChasfatAcademy/RegisterStudentsForm";
-import ExamCreation from "./pages/ChasfatAcademy/ExamCreation";
-import CreateCourse from "./pages/ChasfatAcademy/CreateCourse";
-import CreateQuestionForm from "./pages/ChasfatAcademy/CreateQuestionForm";
+import AboutPage from "./components/ChasfatAcademy/shared/About";
+import Contact from "./components/ChasfatAcademy/shared/Contact";
+import Onboarding from "./components/ChasfatAcademy/pages/Onboarding";
+import RegistrationForm from "./components/ChasfatAcademy/pages/RegistrationForm";
+import LoginForm from "./components/ChasfatAcademy/pages/LoginForm";
+import Manage from "./components/ChasfatAcademy/pages/Manage";
+import TrialQuizDemo from "./components/ChasfatAcademy/pages/TrialQuizDemoEnhanced";
+import StudentRegistration from "./components/ChasfatAcademy/pages/StudentRegistration";
+import ImageUploadQuestion from "./components/ChasfatAcademy/pages/ImageUploadQuestion";
+import CreateExam from "./components/ChasfatAcademy/pages/CreateExam";
+import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
+import RegisterStudentsForm from "./components/ChasfatAcademy/pages/RegisterStudentsForm";
+import ExamCreation from "./components/ChasfatAcademy/pages/ExamCreation";
+import CreateCourse from "./components/ChasfatAcademy/pages/CreateCourse";
+import CreateQuestionForm from "./components/ChasfatAcademy/pages/CreateQuestionForm";
 import { AnimatePresence } from "framer-motion";
 import { useState, useEffect } from 'react';
-import AdminPanel from "./pages/ChasfatAcademy/AdminPanel";
+import AdminPanel from "./components/ChasfatAcademy/pages/AdminPanel";
 
-import CalculatorModal from "./utility/ChasfatAcademy/CalculatorModal";
-import Monitor from "./pages/ChasfatAcademy/Monitor";
-import MonitorDashboard from "./pages/ChasfatAcademy/MonitorDashboard";
+import CalculatorModal from "./components/ChasfatAcademy/utility/CalculatorModal";
+import Monitor from "./components/ChasfatAcademy/pages/Monitor";
 
+import ViewExamPage from "./components/ChasfatAcademy/pages/ViewExamPage";
+import EditExamPage from "./components/ChasfatAcademy/pages/EditExamPage";
 
+import EditCoursePage from "./components/ChasfatAcademy/pages/EditCoursePage";
+import ViewCoursePage from "./components/ChasfatAcademy/pages/ViewCoursePage";
+
+import EditStudentPage from "./components/ChasfatAcademy/pages/EditStudentPage";
+import ViewStudentPage from "./components/ChasfatAcademy/pages/ViewStudentPage";
+
+import Reports from "./components/ChasfatAcademy/pages/Reports";
+
+import AuthWrapper from "./components/ChasfatAcademy/pages/AuthWrapper";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -53,7 +63,10 @@ function App() {
 
         {/* AnimatePresence needs the correct Router context to work */}
         <AnimatePresence mode="wait" exitBeforeEnter>
+          <AuthWrapper>
           <RoutesWrapper />
+          </AuthWrapper>
+        
         </AnimatePresence>
       </Router>
     </div>
@@ -89,7 +102,18 @@ function RoutesWrapper() {
       <Route path="/create_question" element={<CreateQuestionForm />} />
       <Route path="/calculator" element={<CalculatorModal />} />
       <Route path="/monitor" element={<Monitor/>} />
-      <Route path="/monitor_dashboard" element={<MonitorDashboard/>} />
+      
+<Route path="/exam/:examId" element={<ViewExamPage />} />
+      <Route path="/exam/:examId/edit" element={<EditExamPage />} />
+
+      <Route path="/course/:courseId" element={<ViewCoursePage />} />
+      <Route path="/course/:courseId/edit" element={<EditCoursePage />} />
+
+      <Route path="/student/:studentId" element={<ViewStudentPage />} />
+      <Route path="/student/:studentId/edit" element={<EditStudentPage />} />
+      <Route path="/reports" element={<Reports />} />
+
+   
       
     </Routes>
   );

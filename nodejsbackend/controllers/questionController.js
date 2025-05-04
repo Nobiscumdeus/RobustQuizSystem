@@ -2,48 +2,8 @@ const { prisma } = require('../database'); // Import prisma client
 const jwt = require('jsonwebtoken');
 const upload=require('../utils/upload')
 
-/*
-const createQuestion = async (req, res) => {
-    try {
-      const { examId, questionText, questionType, options, correctAnswer, imageUrl, category, tags, difficulty } = req.body;
-  
-      // Validate if all required fields are provided
-      if (!examId || !questionText || !questionType || !correctAnswer) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-  
-      // Check if the exam exists
-      const exam = await prisma.exam.findUnique({
-        where: { id: examId },
-      });
-      if (!exam) {
-        return res.status(404).json({ message: "Exam not found" });
-      }
-  
-      // Create the question
-      const question = await prisma.question.create({
-        data: {
-          examId,
-          questionText,
-          questionType,
-          options: options || [],
-          correctAnswer,
-          imageUrl,
-          category,
-          tags,
-          difficulty,
-        },
-      });
-  
-      res.status(201).json(question);
-    } catch (err) {
-      console.error("Error creating question: ", err);
-      res.status(500).json({ message: "Error creating question" });
-    }
-  };
-  */
 
-  const prisma = require('../prisma/client');
+const prisma = require('../prisma/client');
 const upload = require('../utils/upload');
 
 // Create a new question with image upload

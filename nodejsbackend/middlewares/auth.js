@@ -1,28 +1,45 @@
 const jwt = require('jsonwebtoken');
 
+
+
 exports.authenticate = (req, res, next) => {
-  // Get the token from the Authorization header
-  const token = req.header('Authorization')?.replace('Bearer ', ''); // Extract token
-
-  console.log('Authorization Header:', req.header('Authorization')); // Log the full Authorization header
-
-  if (!token) {
-    console.error('No token provided in Authorization header.');
-    return res.status(401).json({ message: 'Access denied. No token provided.' });
+  // 1. Get and validate Authorization header
+  const authHeader = req.header('Authorization');
+  if (!authHeader) {
+    return res.status(401).json({ message: 'Authorization header missing' });
   }
 
+  // 2. Extract token (more robust check)
+  const tokenParts = authHeader.split(' ');
+  if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
+    return res.status(401).json({ message: 'Invalid Authorization header format' });
+  }
+  const token = tokenParts[1];
+
+  // 3. Verify token
   try {
-    // Verify and decode the JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Decode JWT using secret key
-    console.log('Decoded Token:', decoded); // Log the decoded token
-
-    req.user = decoded; // Attach decoded user data to the request object
-
-    console.log('User from JWT:', req.user); // Log req.user here after decoding the token
-
-    next(); // Move to the next middleware or route handler
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET); // Changed to JWT_ACCESS_SECRET
+    
+    // 4. Attach user data (with selective fields)
+    req.user = {
+      userId: decoded.userId,
+      username: decoded.username,
+      role: decoded.role
+      // Don't attach sensitive fields!
+    };
+    
+    next();
   } catch (err) {
-    console.error('Error verifying token:', err); // Log the error encountered during token verification
-    res.status(400).json({ message: 'Invalid or expired token' });
+    console.error('JWT Verification Error:', err.name);
+    
+    const message = err.name === 'TokenExpiredError' 
+      ? 'Token expired' 
+      : 'Invalid token';
+    
+    res.status(401).json({ 
+      message,
+      error: err.name 
+    });
   }
 };
+

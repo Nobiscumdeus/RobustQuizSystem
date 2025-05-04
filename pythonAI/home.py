@@ -59,14 +59,7 @@ async def analyze_reading_data(data: ReadingDataList):
     
 
 
-    # Convert to DataFrame for easier analysis
-    '''
-       df = pd.DataFrame([{
-        "date": datetime.fromisoformat(item.date.split('T')[0]),
-        "hours": item.hours
-    } for item in data.readings])
-
-    '''
+ 
     try:
         df = pd.DataFrame([{
                 "date": pd.to_datetime(item.date),  # Better parsing
@@ -189,14 +182,6 @@ async def analyze_reading_data(data: ReadingDataList):
         print("\n!!! Analysis error !!!")
         print(str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
-
-#@app.get("/ai/predict-goal/{user_id}")
-
-
 
 
 

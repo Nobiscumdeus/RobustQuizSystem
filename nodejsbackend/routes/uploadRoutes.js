@@ -1,10 +1,12 @@
 const express = require('express');
-const questionController = require('../controllers/questionController');
-const upload = require('../utils/upload');
+
+const { upload, uploadImage } = require('../controllers/imageUploadController');
 
 const router = express.Router();
 
-// Create a new question with image upload
-router.post('/question', upload.single('image'), questionController.createQuestion);
+
+//Endpoint for image upload 
+router.post('/upload',upload.single('image'),uploadImage);
+
 
 module.exports = router;

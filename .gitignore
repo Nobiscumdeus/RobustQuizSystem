@@ -13,9 +13,3 @@ logs/
 
 # MacOS system files
 .DS_Store
-
-prisma/migrations/
-
-package-lock.json 
-
-config/

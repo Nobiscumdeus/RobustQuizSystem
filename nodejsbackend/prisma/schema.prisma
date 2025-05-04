@@ -20,6 +20,16 @@ model User {
   createdAt DateTime  @default(now()) // Timestamp when the user is created
   updatedAt DateTime  @updatedAt // Automatically updated when the user is modified
   courses   Course[]  @relation("CourseExaminer") // If this user is an examiner, they can have multiple courses
+
+  //updated schema
+  notifications Notification[] // Add this line
+  lastName      String? // Missing from current schema
+  phone         String? // Useful for contact
+  avatarUrl     String? // For profile pictures
+  isActive      Boolean        @default(true) // To disable/enable accounts
+  lastLogin     DateTime? // Track user activity
+
+  @@index([email]) // Optimizes email lookups
 }
 
 model Student {
@@ -34,6 +44,22 @@ model Student {
   courses    Course[] // Many-to-many relationship with courses
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+
+  //updated schema 
+  attendances Attendance[] // Add this line
+  email       String? // Student contact email
+  phone       String? // Student contact phone
+  department  String? // Academic department
+  level       String? // e.g., "100", "200", etc.
+  isActive    Boolean      @default(true)
+  lastActive  DateTime? // Last activity timestamp
+
+  @@index([matricNo]) // Faster matric number searches
+  @@index([createdAt]) // Better sorting by creation date
+
+
+   @@index([firstName, lastName])
+
 }
 
 model Exam {
@@ -51,12 +77,29 @@ model Exam {
   course     Course       @relation(fields: [courseId], references: [id]) // Relationship to the Course
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+
+  //updated schema
+  attendances Attendance[] // Add this line
+
+  description        String? // Exam description
+  instructions       String? // Special instructions
+  isPublished        Boolean   @default(false) // Control exam visibility
+  startTime          DateTime? // Specific start time
+  endTime            DateTime? // Specific end time
+  maxAttempts        Int       @default(1) // Number of allowed attempts
+  passingScore       Float     @default(60.0) // Minimum passing score
+  proctoringSettings Json? // Store proctoring configuration
+
+    @@index([examinerId]) // Speeds up examiner-based queries
+
+    @@index([title])
+     @@index([courseId]) // Index the foreign key
 }
 
 model Question {
-  id            Int               @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   examId        Int
-  exam          Exam              @relation(fields: [examId], references: [id])
+  exam          Exam         @relation(fields: [examId], references: [id])
   questionText  String
   questionType  QuestionType
   options       String[]
@@ -65,12 +108,10 @@ model Question {
   category      CategoryType
   tags          String[]
   difficulty    String
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   answers       Answer[]
-    
 }
-
 
 enum QuestionType {
   MULTIPLE_CHOICE
@@ -104,8 +145,6 @@ enum CategoryType {
   MUSIC
 }
 
-
-
 model Answer {
   id         Int      @id @default(autoincrement())
   content    String // The content of the answer
@@ -128,6 +167,15 @@ model Course {
   examinerId Int // foreign key to the User (examiner)
   students   Student[] // Many-to-many relation with students
   exams      Exam[] // One-to-many relation with exams
+
+  //Updated schema 
+  creditHours  Int? // Course credit units
+  semester     String? // e.g., "First Semester 2023"
+  isActive     Boolean @default(true)
+  thumbnailUrl String? // Course image/thumbnail
+
+   @@index([title])
+  @@index([code])
 }
 
 model ExamResult {
@@ -141,10 +189,42 @@ model ExamResult {
   submittedAt DateTime // Timestamp when the exam was submitted
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  //Updated schema 
+  totalQuestions Int // Number of questions in exam
+  correctAnswers Int // Number of correct answers
+  percentage     Float // Calculated percentage score
+  timeSpent      Int? // Time taken in seconds
+  ipAddress      String? // For security logging
+  deviceInfo     String? // Device used for exam
+  answers        Json? // Store student's answer data
 }
 
 enum ExamStatus {
   PENDING
   COMPLETED
   IN_PROGRESS
+}
+
+// For tracking student attendance/participation
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id])
+  examId    Int
+  exam      Exam     @relation(fields: [examId], references: [id])
+  status    String // "present", "absent", "late"
+  timestamp DateTime @default(now())
+}
+
+// For system notifications
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  type      String // "info", "warning", "alert"
 }

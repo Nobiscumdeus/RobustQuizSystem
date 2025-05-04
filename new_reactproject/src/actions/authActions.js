@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { loginStart, loginSuccess, loginFailure, logout, setUser } from '../store/authSlice';
+import { loginStart,loginSuccess, loginFailure, logout, setUser } from '../features/ChasfatAcademy/auth/authSlice';
 
 // User login
 export const loginUser = (credentials) => async (dispatch) => {

@@ -5,17 +5,14 @@ const nodemailer = require('nodemailer'); // To send emails
 const crypto = require('crypto'); // For generating tokens
 require('dotenv').config();
 
-// Function to generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
-    { userId: user.id, username: user.username,role:user.role }, // Include only the essential fields
-    process.env.JWT_SECRET || 'your_jwt_secret',
-    { expiresIn: '1h' }
-  );
-};
+//const { generateToken} =require('../utils/auth');
+//const { generateTokens,verifyRefreshToken} =require('../utils/auth')
+const tokenUtils=require('../utils/auth')
+
+
 
 // Register function
-// Register function
+
 exports.register = async (req, res) => {
   const { username, email, password, firstName } = req.body;  // Include firstName as optional
 
@@ -48,7 +45,8 @@ exports.register = async (req, res) => {
     });
 
     // Generate the JWT token for the user
-    const token = generateToken(newUser); // Generate the token right after user creation
+    //const token = generateToken(newUser); // Generate the token right after user creation
+    const tokens=tokenUtils.generateTokens(newUser);
 
     // Remove password from the response
     const { password: _, ...userWithoutPassword } = newUser;
@@ -57,7 +55,8 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       user: userWithoutPassword,
-      token, // Include the token in the response
+     // token, // Include the token in the response
+      token:tokens.accesToken,
     });
 
   } catch (err) {
@@ -84,14 +83,97 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Generate JWT token
-    const token = generateToken(user);
-    res.json({ token });
+   // const token = generateToken(user);
+   const tokens=tokenUtils.generateTokens(user);
+   
+   //Setting refresh token as HTTP-ONLY cookie 
+   res.cookie('refreshToken',tokens.refreshToken,{
+    httpOnly:true,
+    secure:process.env.NODE_ENV ==='production',
+    sameSite:'strict', 
+    maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
+
+   })
+
+
+    //res.json({ token });
+    res.json({
+      token:tokens.token,
+      user:{
+        id:user.id,
+        username:user.username,
+        role:user.role
+      }
+    })
 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Login failed' });
   }
 };
+
+
+//Refresh tokens 
+exports.refreshToken = async (req, res) => {
+  try {
+    // 1. Get refresh token from cookie
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) throw new Error('No refresh token provided');
+    
+    // 2. Verify refresh token
+    const decoded = verifyRefreshToken(refreshToken);
+    
+    // 3. Get user from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+       // isActive: true  // Example of additional security check
+      }
+    });
+
+
+    
+    if (!user) throw new Error('User not found');
+    //if (!user.isActive) throw new Error('User account is disabled');
+    
+    
+    // 4. Generate new tokens
+    const tokens = tokenUtils.generateTokens(user);
+    
+    // 5. Update refresh token cookie
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    
+   // res.json({ accessToken: tokens.accessToken });
+   res.json({ 
+    token:tokens.token,
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    }
+
+   });
+    
+  } catch (error) {
+    //Clear invalid refresh token 
+    res.clearCookie('refreshToken');
+    res.status(401).json({ message: error.message });
+  }
+};
+
+
+
+
+
+
 
 // Logout function
 exports.logout = (req, res) => {

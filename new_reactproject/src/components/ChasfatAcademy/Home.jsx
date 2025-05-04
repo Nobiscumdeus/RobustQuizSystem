@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Footer from "../../components/ChasfatAcademy/Footer";
+import Footer from "./shared/Footer";
 import { motion } from "framer-motion";
-import ScrollDownIcon from "../../utility/ChasfatAcademy/ScrollDownIcon";
+import ScrollDownIcon from "./utility/ScrollDownIcon";
 
 
 const Home = () => {
  
-
 
   const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
 

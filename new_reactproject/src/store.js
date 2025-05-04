@@ -6,7 +6,7 @@ import filtersReducer from './features/filters/filtersSlice';
 import timerReducer from './features/ChasfatAcademy/timer/timerSlice';
 import darkModeReducer from './features/ChasfatAcademy/darkmode/darkModeSlice';
 import quizReducer from './features/ChasfatAcademy/quiz/quizSlice'; 
-import trial_quizReducer from './store/trial_quizSlice';
+import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice';
 
 // Configure the Redux store
 const store = configureStore({
