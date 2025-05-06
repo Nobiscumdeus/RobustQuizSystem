@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
     "@reduxjs/toolkit": "^2.2.7",
     "axios": "^1.7.7",
     "chart.js": "^4.4.8",
     "file-saver": "^2.0.5",
     "formik": "^2.4.6",
     "framer-motion": "^12.4.7",
+    "graphql": "^16.11.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mathjs": "^14.3.1",
