@@ -3,6 +3,13 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useSelector } from "react-redux";
+import {toast} from 'react-toastify'
+import { isAuthenticated } from "../../../utility/auth";
+import { useNavigate } from "react-router-dom";
+
+
+
+
 
 const ExaminerStudents = () => {
   const [students, setStudents] = useState([]);
@@ -10,6 +17,17 @@ const ExaminerStudents = () => {
   const [error, setError] = useState(null);
   const token = localStorage.getItem("token");
   const darkMode = useSelector((state) => state.darkMode.darkMode);
+
+    const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/admin_panel" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
+
 
   // Fetch students by examiner
   useEffect(() => {
@@ -61,6 +79,7 @@ const ExaminerStudents = () => {
         await axios.delete(`http://localhost:5000/students/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        toast.success('Student deleted succesfully ')
         setStudents(students.filter((student) => student.id !== studentId));
       } catch (err) {
         setError("Failed to delete student");
@@ -83,6 +102,21 @@ const ExaminerStudents = () => {
         darkMode ? "bg-gray-800" : "bg-white"
       } rounded-lg shadow-md p-4`}
     >
+      <div className="flex justify-between items-center mb-4">
+        <div>
+
+        </div>
+         <Link
+                    to="/student"
+                    className={`px-4 py-2 rounded-lg ${
+                      darkMode
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    } text-white transition`}
+                  >
+                    Add New Student 
+                  </Link>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className={darkMode ? "bg-gray-700" : "bg-gray-50"}>

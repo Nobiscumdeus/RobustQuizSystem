@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState ,useEffect} from 'react';
 import axios from 'axios';
-import ScrollDownIcon from '../utility/ScrollDownIcon';
+import ScrollDownIcon from '../../../utility/ScrollDownIcon';
+import { isAuthenticated } from '../../../utility/auth';
+import { useNavigate } from 'react-router-dom';
 
 const CreateQuestionForm = () => {
   const [questionText, setQuestionText] = useState('');
@@ -19,6 +21,19 @@ const CreateQuestionForm = () => {
     setOptions([...options, '']);
   };
 
+
+    const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/admin_panel" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
+
+
+  
   // Handle removing an option
   const removeOption = (index) => {
     const newOptions = options.filter((_, i) => i !== index);

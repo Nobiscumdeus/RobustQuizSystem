@@ -7,7 +7,7 @@ import { logoutUser} from '../../../actions/authActions';
 
 import useOnlineStatus from '../utility/OnlineStatusBar';
 import { motion } from 'framer-motion';
-import { isAuthenticated, logout } from '../utility/auth'; // <-- [1] IMPORT YOUR AUTH UTILS
+import { isAuthenticated, logout } from '../utility/auth';
 
 const Header = () => {
   const isOnline = useOnlineStatus();
@@ -16,39 +16,51 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // <-- [2] ADD REAL-TIME AUTH STATE
-  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  // Get user from Redux state
   const user = useSelector((state) => state.auth?.user);
+  
+  // Use Redux state as primary source of truth for authentication
+  const isLoggedIn = !!user || isAuthenticated();
 
-  // <-- [3] SYNC AUTH STATE ACROSS TABS
+  // Sync auth state across tabs and listen for auth changes
   useEffect(() => {
     const handleAuthChange = () => {
-      setIsLoggedIn(isAuthenticated());
-      if (!isAuthenticated()) dispatch(logoutUser());
+      // Force re-render by checking authentication state
+      if (!isAuthenticated()) {
+        dispatch(logoutUser());
+      }
     };
 
-    window.addEventListener('storage', handleAuthChange);
+    // Listen for both login and logout events
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' || e.key === 'user') {
+        handleAuthChange();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('logout', handleAuthChange);
+    window.addEventListener('login', handleAuthChange); // Add login event listener
     
     return () => {
-      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('logout', handleAuthChange);
+      window.removeEventListener('login', handleAuthChange);
     };
   }, [dispatch]);
 
-  // <-- [4] IMPROVED LOGOUT HANDLER
+  // Improved logout handler
   const handleLogout = () => {
-    logout(); // <-- Uses your auth utility
+    logout();
     dispatch(logoutUser());
-    setIsLoggedIn(false);
     navigate('/login');
   };
 
-  // <-- [5] SIMPLIFIED NAV ITEMS RENDERING
+  // Simplified nav items rendering
   const navItems = [
     { path: '/', label: 'Home', show: true },
-    { path: '/contact', label: 'Contact', show: true },
-    { path: '/about', label: 'About', show: true },
+    { path: '/contact', label: 'Contact', show: !isLoggedIn }, // Hide when logged in
+    { path: '/about', label: 'About', show: !isLoggedIn }, // Hide when logged in
     { path: '/profile', label: 'Profile', show: isLoggedIn },
     { path: '/login', label: 'Login', show: !isLoggedIn },
     { path: '/register', label: 'Register', show: !isLoggedIn },
@@ -73,7 +85,7 @@ const Header = () => {
         {/* Navigation */}
         <nav className={`flex-1 lg:flex justify-end items-center space-x-4 ${menuOpen ? 'block' : 'hidden'} lg:block`}>
           <ul className="flex space-x-4">
-            {/* <-- [6] DYNAMIC NAV ITEMS */}
+            {/* Dynamic nav items */}
             {navItems.map((item) => item.show && (
               <motion.li
                 key={item.path}
@@ -93,7 +105,7 @@ const Header = () => {
               </motion.li>
             ))}
 
-            {/* <-- [7] CONDITIONAL LOGOUT/WELCOME */}
+            {/* Conditional logout/welcome */}
             {isLoggedIn && (
               <>
                 <motion.li

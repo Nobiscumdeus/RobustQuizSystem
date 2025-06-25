@@ -2,6 +2,7 @@
 const { prisma } = require('../database'); // Import prisma client
 //const { prisma } = require('../database'); // Import prisma client
 
+
 exports.registerStudent = async (req, res) => {
   const { students, courseId, examId } = req.body;
   const examinerId = req.user.userId;
@@ -94,3 +95,200 @@ exports.registerStudent = async (req, res) => {
     res.status(500).json({ message: 'Failed to register students', error: err.message });
   }
 };
+
+
+
+exports.deleteStudent=async(req,res)=>{
+  const studentId =parseInt(req.params.studentId)
+
+  try{
+    //Check if the student exits 
+    const student =await prisma.student.findUnique({
+      where : { id: studentId}
+    })
+
+      if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    
+    // Get the user ID from the JWT token to verify authorization
+    const requestUserId = parseInt(req.user.userId); // Assuming you have auth middleware
+    
+
+        // You might need to adjust this logic based on your specific authorization rules
+        /*
+    const requesterRole = req.user.role;
+    if (requesterRole !== 'admin' && requesterRole !== 'instructor') {
+      return res.status(403).json({ error: 'Not authorized to delete students' });
+    }
+    
+    */
+   await prisma.student.delete({
+    where: { id:studentId}
+   })
+
+   res.status(200).json({ message : 'Student deleted successfully '})
+
+
+  }catch(error){
+      console.error('Student deletion error:', error);
+    res.status(500).json({
+      error: 'Error deleting student',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+
+exports.createStudent=async(req,res)=>{
+
+  try{
+     const { matricNo, firstName, lastName, examinerId } = req.body;
+
+      // Basic validation
+    if (!matricNo || !firstName || !lastName || !examinerId) {
+      return res.status(400).json({ 
+        error: 'All fields are required: matricNo, firstName, lastName, examinerId' 
+      });
+    }
+
+       // Validate matriculation number format (4-10 digits)
+    if (!/^\d{4,10}$/.test(matricNo)) {
+      return res.status(400).json({ 
+        error: 'Matriculation Number should be between 4 and 10 digits' 
+      });
+    }
+
+   // Check if student with this matric number already exists
+    const existingStudent = await prisma.student.findUnique({
+      where: { matricNo }
+    });
+
+
+       if (existingStudent) {
+      return res.status(400).json({ 
+        error: 'Student with this matriculation number already exists' 
+      });
+    }
+
+    
+    // Verify examiner exists
+    const examiner = await prisma.user.findUnique({
+      where: { id: parseInt(examinerId) }
+    });
+
+        if (!examiner) {
+      return res.status(400).json({ 
+        error: 'Examiner not found' 
+      });
+    }
+
+
+    //create new student 
+    const newStudent = await prisma.student.create({
+      data:{
+        matricNo,
+        firstName,
+        lastName,
+        examinerId:parseInt(examinerId)
+      },
+      include:{
+        examiner:{
+          select:{
+            id:true,
+            firstName:true,
+            lastName:true,
+            email:true
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      message:'Student created successfully',
+      student:newStudent
+    })
+
+  }catch(error){
+     console.error('Error creating student:', error);
+
+        // Handle Prisma unique constraint errors
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        error: 'Student with this matriculation number already exists' 
+      });
+    }
+
+    res.status(500).json({
+      error:'Internal server error'
+    })
+  }
+}
+
+
+// Get all students (optional - for listing)
+exports.getAllStudents = async (req, res) => {
+  try {
+    const students = await prisma.student.findMany({
+      include: {
+        examiner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.status(200).json({
+      students,
+      count: students.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+};
+
+// Get student by matric number (optional - for searching)
+exports.getStudentByMatric = async (req, res) => {
+  try {
+    const { matricNo } = req.params;
+
+    const student = await prisma.student.findUnique({
+      where: { matricNo },
+      include: {
+        examiner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        exams: true
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ 
+        error: 'Student not found' 
+      });
+    }
+
+    res.status(200).json({ student });
+
+  } catch (error) {
+    console.error('Error fetching student:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+};
+

@@ -1,5 +1,5 @@
 // store.js
-
+/*
 import { configureStore } from "@reduxjs/toolkit";
 import todosReducer from './features/todos/todosSlice';
 import filtersReducer from './features/filters/filtersSlice';
@@ -22,3 +22,37 @@ const store = configureStore({
 });
 
 export default store; // Default export for the store
+*/
+
+
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from './features/ChasfatAcademy/auth/authSlice';
+import examReducer from './features/ChasfatAcademy/exam/examSlice';
+import questionReducer from './features/ChasfatAcademy/question/questionSlice';
+import timerReducer from './features/ChasfatAcademy/timer/timerSlice';
+import resultReducer from './features/ChasfatAcademy/result/resultSlice';
+
+// Importing an API slice created using RTK Query (Redux Toolkit's data-fetching tool).
+import { examApi } from './api/examApi'
+
+
+export const store =configureStore({
+  reducer:{
+    auth:authReducer,
+    exam:examReducer,
+    questions:questionReducer,
+    timer:timerReducer,
+    results:resultReducer,
+    //RTK Api reducer 
+    [examApi.reducerPath] : examApi.reducer
+  },
+  middleware:(getDefaultMiddleware)=>
+    getDefaultMiddleware({
+      serializableCheck:{
+        ignoredActions:['persist/PERSIST','persist/REHYDRATE']
+      }
+    }).concat(examApi.middleware),
+     
+})
+
+

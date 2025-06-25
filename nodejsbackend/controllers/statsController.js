@@ -1,60 +1,7 @@
 const { prisma } = require('../database'); // Import prisma client
 
 
-/*
-exports.getUserStats = async (req, res) => {
-  try {
-    const userId = req.user.userId; // From your auth middleware
-    
-    const stats = await prisma.$transaction([
-      // Total Exams
-      prisma.exam.count({
-        where: { examinerId: userId }
-      }),
-      
-      // Total Students
-      prisma.student.count({
-        where: { examinerId: userId }
-      }),
-      
-      // Total Courses
-      prisma.course.count({
-        where: { examinerId: userId }
-      }),
-      
-      // Ongoing Exams
-      prisma.exam.count({
-        where: { 
-          examinerId: userId,
-          date: { 
-              lte: new Date(), // Date is less than or equal to now
-              endTime: { gt: new Date() } // End time is in future
-          }
-        }
-      }),
-      
-      // Completed Exams
-      prisma.exam.count({
-        where: { 
-          examinerId: userId,
-          endTime: { lt: new Date() } // End time has passed
-        }
-      })
-    ]);
 
-    res.json({
-      totalExams: stats[0],
-      totalStudents: stats[1],
-      totalCourses: stats[2],
-      ongoingExams: stats[3],
-      completedExams: stats[4]
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-*/
 
 exports.getUserStats = async (req, res) => {
     try {

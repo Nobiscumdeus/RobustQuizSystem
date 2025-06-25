@@ -12,6 +12,14 @@ router.post('/', registerStudent);
 router.get('/:examinerId', getStudentsByExaminer);
 */
 
+router.post('/students',authenticate,studentController.createStudent)
+
+
 router.post('/student-register',authenticate,studentController.registerStudent);
+
+
+router.delete('/students/:studentId',authenticate, studentController.deleteStudent);
+
+
 
 module.exports=router;

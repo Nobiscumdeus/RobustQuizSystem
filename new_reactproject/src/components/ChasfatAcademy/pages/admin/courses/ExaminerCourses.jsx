@@ -3,81 +3,92 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useSelector } from "react-redux";
+import { isAuthenticated } from "../../../utility/auth";
+import { useNavigate } from "react-router-dom";
 
-const ExaminerExams = () => {
-  const [exams, setExams] = useState([]);
+import { toast } from "react-toastify";
+const ExaminerCourses = () => {
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = localStorage.getItem("token");
   const darkMode = useSelector((state) => state.darkMode.darkMode);
 
-  // Fetch exams by examiner
+
+    const navigate = useNavigate();
   useEffect(() => {
-    const fetchExams = async () => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/admin_panel" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
+
+
+  
+  // Fetch courses by instructor
+  useEffect(() => {
+    const fetchCourses = async () => {
       try {
         setLoading(true);
         const decodedToken = jwtDecode(token);
-        const examinerId = decodedToken.userId;
+        const instructorId = decodedToken.userId;
 
         const response = await axios.get(
-          `http://localhost:5000/exams/${examinerId}`,
+          `http://localhost:5000/courses/${instructorId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        // Calculate status for each exam
-        const examsWithStatus = response.data.exams.map((exam) => {
+        // Calculate status for each course (active/archived based on current date)
+        const coursesWithStatus = response.data.courses.map((course) => {
           const now = new Date();
-          const startTime = new Date(exam.startTime || exam.date);
-          const endTime = new Date(
-            exam.endTime ||
-              new Date(startTime.getTime() + exam.duration * 60000)
-          );
-
-          let status = "scheduled";
-          if (now > startTime && now < endTime) status = "in-progress";
-          if (now > endTime) status = "completed";
-
-          return { ...exam, status };
+        //  const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+          
+          // Assuming courses have a semester/year structure
+          let status = "active";
+          if (course.semester === "Fall" && currentMonth > 11) status = "archived";
+          if (course.semester === "Spring" && currentMonth > 5) status = "archived";
+          if (course.semester === "Summer" && currentMonth > 8) status = "archived";
+          
+          return { ...course, status };
         });
 
-        setExams(examsWithStatus);
+        setCourses(coursesWithStatus);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch exams");
+        setError(err.response?.data?.message || "Failed to fetch courses");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExams();
+    fetchCourses();
   }, [token]);
 
   // Action handlers
-  const handleDelete = async (examId) => {
-    if (window.confirm("Are you sure you want to delete this exam?")) {
+  const handleDelete = async (courseId) => {
+    if (window.confirm("Are you sure you want to delete this course? This will also delete all associated exams.")) {
       try {
-        await axios.delete(`http://localhost:5000/exams/${examId}`, {
+        await axios.delete(`http://localhost:5000/courses/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setExams(exams.filter((exam) => exam.id !== examId));
+        toast.success('Course deleted successfully!')
+        setCourses(courses.filter((course) => course.id !== courseId));
       } catch (err) {
-        setError("Failed to delete exam");
+        setError("Failed to delete course");
       }
     }
   };
 
-  const showProctoringControls = (examId) => {
-    // Implement proctoring controls
-    console.log("Show proctoring for exam:", examId);
-  };
-
-  const exportResults = (examId) => {
+  const exportStudentList = (courseId) => {
     // Implement export functionality
-    console.log("Export results for exam:", examId);
+    console.log("Export student list for course:", courseId);
   };
 
-  if (loading) return <div className="text-center py-8">Loading exams...</div>;
+  if (loading) return <div className="text-center py-8">Loading courses...</div>;
   if (error)
     return <div className="text-center text-red-500 py-8">{error}</div>;
 
@@ -92,19 +103,22 @@ const ExaminerExams = () => {
           <thead className={darkMode ? "bg-gray-700" : "bg-gray-50"}>
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Exam Title
+                Course Title
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Course
+                Code
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Date
+                Semester
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Participants
+                Students
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                Exams
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Actions
@@ -116,75 +130,58 @@ const ExaminerExams = () => {
               darkMode ? "divide-gray-700" : "divide-gray-200"
             }`}
           >
-            {exams.length > 0 ? (
-              exams.map((exam) => (
+            {courses.length > 0 ? (
+              courses.map((course) => (
                 <tr
-                  key={exam.id}
+                  key={course.id}
                   className={
                     darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"
                   }
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium">{exam.title}</div>
-                    {exam.description && (
+                    <div className="font-medium">{course.title}</div>
+                    {course.description && (
                       <div
                         className={`text-xs ${
                           darkMode ? "text-gray-400" : "text-gray-500"
                         }`}
                       >
-                        {exam.description.substring(0, 50)}
-                        {exam.description.length > 50 ? "..." : ""}
+                        {course.description.substring(0, 50)}
+                        {course.description.length > 50 ? "..." : ""}
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {exam.course?.title || "nil"}
+                    {course.code || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {new Date(exam.date).toLocaleDateString()}
-                    {exam.startTime && exam.endTime && (
-                      <div className="text-xs text-gray-500">
-                        {new Date(exam.startTime).toLocaleTimeString()} -{" "}
-                        {new Date(exam.endTime).toLocaleTimeString()}
-                      </div>
-                    )}
+                    {course.semester} {course.year}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
-                        exam.status === "scheduled"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : exam.status === "in-progress"
+                        course.status === "active"
                           ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {exam.status === "scheduled"
-                        ? "Scheduled"
-                        : exam.status === "in-progress"
-                        ? "In Progress"
-                        : "Completed"}
+                      {course.status === "active" ? "Active" : "Archived"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {exam.enrolled > 0
-                      ? exam.status === "in-progress"
-                        ? `${exam.active || 0}/${exam.enrolled} (${Math.round(
-                            ((exam.active || 0) / exam.enrolled) * 100
-                          )}% active)`
-                        : exam.status === "completed"
-                        ? `${exam.submitted || 0}/${
-                            exam.enrolled
-                          } (${Math.round(
-                            ((exam.submitted || 0) / exam.enrolled) * 100
-                          )}% submitted)`
-                        : `${exam.enrolled} enrolled`
-                      : "No participants yet"}
+                    {course.enrolledStudents > 0
+                      ? `${course.enrolledStudents} enrolled`
+                      : "No students yet"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {course.examCount > 0
+                      ? `${course.examCount} exams`
+                      : "No exams yet"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <Link
-                        to={`/exam/${exam.id}`}
+                        to={`/courses/${course.id}`}
                         className={`px-3 py-1 rounded-md ${
                           darkMode
                             ? "bg-blue-600 hover:bg-blue-700"
@@ -194,7 +191,7 @@ const ExaminerExams = () => {
                         View
                       </Link>
                       <Link
-                        to={`/exam/${exam.id}/edit`}
+                        to={`/courses/${course.id}/edit`}
                         className={`px-3 py-1 rounded-md ${
                           darkMode
                             ? "bg-gray-600 hover:bg-gray-700"
@@ -204,7 +201,7 @@ const ExaminerExams = () => {
                         Edit
                       </Link>
                       <button
-                        onClick={() => handleDelete(exam.id)}
+                        onClick={() => handleDelete(course.id)}
                         className={`px-3 py-1 rounded-md ${
                           darkMode
                             ? "bg-red-600 hover:bg-red-700"
@@ -213,21 +210,9 @@ const ExaminerExams = () => {
                       >
                         Delete
                       </button>
-                      {exam.status === "in-progress" && (
+                      {course.enrolledStudents > 0 && (
                         <button
-                          onClick={() => showProctoringControls(exam.id)}
-                          className={`px-3 py-1 rounded-md ${
-                            darkMode
-                              ? "bg-green-600 hover:bg-green-700"
-                              : "bg-green-500 hover:bg-green-600"
-                          } text-white text-sm`}
-                        >
-                          Proctor
-                        </button>
-                      )}
-                      {exam.status === "completed" && (
-                        <button
-                          onClick={() => exportResults(exam.id)}
+                          onClick={() => exportStudentList(course.id)}
                           className={`px-3 py-1 rounded-md ${
                             darkMode
                               ? "bg-purple-600 hover:bg-purple-700"
@@ -243,8 +228,8 @@ const ExaminerExams = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="px-6 py-4 text-center">
-                  No exams found
+                <td colSpan="7" className="px-6 py-4 text-center">
+                  No courses found
                 </td>
               </tr>
             )}
@@ -255,4 +240,4 @@ const ExaminerExams = () => {
   );
 };
 
-export default ExaminerExams;
+export default ExaminerCourses;

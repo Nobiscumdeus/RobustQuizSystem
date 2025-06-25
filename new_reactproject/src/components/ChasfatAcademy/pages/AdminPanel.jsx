@@ -24,9 +24,10 @@ import axios from "axios";
 import Spinner from "../utility/Spinner";
 import { isAuthenticated } from "../utility/auth";
 
-import ExaminerExams from "./ExaminerExams";
-import ExaminerCourses from "./ExaminerCourses";
-import ExaminerStudents from "./ExaminerStudents";
+
+import ExaminerExams from "./admin/exams/ExaminerExams";
+import ExaminerCourses from "./admin/courses/ExaminerCourses";
+import ExaminerStudents from "./admin/students/ExaminerStudents";
 
 function AdminPanel() {
   const darkMode = useSelector((state) => state.darkMode?.darkMode) || false;
@@ -35,6 +36,7 @@ function AdminPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [examData, setExamData] = useState({});
   // const [selectedExam, setSelectedExam] = useState(null);
+  console.log(examData);
 
   const [filterStatus, setFilterStatus] = useState("all");
   // Fetch stats when component mounts
@@ -49,6 +51,7 @@ function AdminPanel() {
   //const [userData, setUserData] = useState(null);
 
   const [userData, setUserData] = useState({ students: [] });
+  console.log(userData)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -258,25 +261,7 @@ function AdminPanel() {
 
  
 
-  // Calculate overall stats
-  const overallStats = {
-    completionRate: stats.completedExams
-      ? (
-          (stats.completedExams.reduce((acc, exam) => acc + exam.submitted, 0) /
-            stats.completedExams.reduce(
-              (acc, exam) => acc + exam.enrolled,
-              0
-            )) *
-          100
-        ).toFixed(1)
-      : 0,
-    averageScore: stats.completedExams
-      ? (
-          stats.completedExams.reduce((acc, exam) => acc + exam.avgScore, 0) /
-          stats.completedExams.length
-        ).toFixed(1)
-      : 0,
-  };
+  
 
   const highlightMatch = (text, query) => {
     if (!query || !text || typeof text !== "string") return text;
@@ -315,7 +300,7 @@ function AdminPanel() {
       >
         <div className="flex items-center">
           <h1
-            className={`text-2xl font-bold ${
+            className={`text-xl font-bold ${
               darkMode ? "text-white" : "text-blue-600"
             }`}
           >
@@ -609,6 +594,7 @@ function AdminPanel() {
                 icon="📚"
                 darkMode={darkMode}
               />
+{/*}
               <StatCard
                 title="Completion Rate"
                 value={`${overallStats.completionRate}% `}
@@ -621,11 +607,15 @@ function AdminPanel() {
                 icon="📊"
                 darkMode={darkMode}
               />
+
+              */}
+
+
             </div>
 
             {/* Tabs */}
             <div
-              className={`flex border-b ${
+              className={`flex border-b flex-wrap ${
                 darkMode ? "border-gray-700" : "border-gray-200"
               } mb-6`}
             >
@@ -780,7 +770,8 @@ function AdminPanel() {
             )}
 
             {activeTab === "exams" && (
-              <div className="space-y-6">
+             
+             <div className="space-y-6">
                 {/* Exam Controls */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                   <div className="flex items-center space-x-2 mb-2 md:mb-0">
@@ -817,119 +808,9 @@ function AdminPanel() {
 
             {activeTab === "students" && (
 
-              /*
-              <div
-                className={`${
-                  darkMode ? "bg-gray-800" : "bg-white"
-                } rounded-lg shadow-md p-4`}
-              >
-                <div className="overflow-x-auto">
-                  {userData.students && userData.students.length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead
-                        className={darkMode ? "bg-gray-700" : "bg-gray-50"}
-                      >
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Name
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Matriculation
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Exams Taken
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Avg. Score
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Last Active
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-center">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody
-                        className={`divide-y ${
-                          darkMode ? "divide-gray-700" : "divide-gray-200"
-                        }`}
-                      >
-                        {userData.students &&
-                          userData.students.map((student) => (
-                            <tr
-                              key={student.id}
-                              className={`${
-                                darkMode
-                                  ? "hover:bg-gray-700"
-                                  : "hover:bg-gray-50"
-                              }`}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="font-medium">
-                                  {student.firstName} {student.lastName}{" "}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                {student.matricNo}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                {student.exams || "NIl"}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                {student.avgScore || 0}%
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                {student.lastActive || "This year.."}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                <Link
-                                  to={`/student/${student.id}`}
-                                  className={`px-3 py-1 m-2 rounded-md ${
-                                    darkMode
-                                      ? "bg-blue-600 hover:bg-blue-700"
-                                      : "bg-blue-500 hover:bg-blue-600"
-                                  } text-white text-sm`}
-                                >
-                                  View
-                                </Link>
-                                <Link
-                                  to={`/student/${student.id}`}
-                                  className={`px-3 py-1 m-2 rounded-md ${
-                                    darkMode
-                                      ? "bg-orange-600 hover:bg-orange-700"
-                                      : "bg-orange-500 hover:bg-orange-600"
-                                  } text-white text-sm`}
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  //  to={`/student/${student.id}`}
-                                  className={`px-3 py-1 m-2 rounded-md ${
-                                    darkMode
-                                      ? "bg-red-600 hover:bg-red-700"
-                                      : "bg-red-500 hover:bg-red-600"
-                                  } text-white text-sm`}
-                                  onClick={() =>
-                                    handleDelete("student", student.id)
-                                  }
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="text-gray-600 font-bold text-center ">
-                      {" "}
-                      Ooops! No students found, try again .
-                    </p>
-                  )}
-                </div>
-              </div>
-              */
+
+              
+
 
               <ExaminerStudents />
 

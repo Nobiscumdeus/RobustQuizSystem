@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { isAuthenticated } from '../utility/auth';
+import { isAuthenticated } from '../../../utility/auth';
 
 const ViewCoursePage = () => {
   const { courseId } = useParams();

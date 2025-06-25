@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode"; // Correctly use named import
-import ScrollDownIcon from "../utility/ScrollDownIcon";
+import ScrollDownIcon from "../../../utility/ScrollDownIcon";
+import {toast} from 'react-toastify'
+import { isAuthenticated } from "../../../utility/auth";
+ import {  useNavigate } from "react-router-dom";
 
 const ExamCreation = () => {
   const [title, setTitle] = useState("");
@@ -25,6 +28,22 @@ const ExamCreation = () => {
   const [passingScore, setPassingScore] = useState(60.0);
   const [proctoringSettings, setProctoringSettings] = useState({});
 
+  
+
+
+
+
+    //Authentication check
+     const navigate = useNavigate();
+     useEffect(() => {
+       if (!isAuthenticated()) {
+         navigate("/login", {
+           state: { from: "/admin_panel" },
+           replace: true,
+         });
+       }
+     }, [navigate]);
+
   // Decode JWT to get examinerId (userId)
   useEffect(() => {
     const userToken = localStorage.getItem("token");
@@ -34,22 +53,41 @@ const ExamCreation = () => {
         setExaminerId(decodedToken.userId);
       } catch (err) {
         console.error("Error decoding the token:", err);
-        setError("Failed to decode the token");
+       // setError("Failed to decode the token");
+        toast.error("Failed to decode the token")
       }
     }
   }, []);
 
   // Fetch courses once examinerId is available
   useEffect(() => {
+   
     const fetchCourses = async () => {
       if (examinerId) {
         try {
+
+          const userToken = localStorage.getItem('token'); // Get token from localStorage
+
+               //Check if token exists 
+      if(!userToken){
+        throw new Error('Authentication token not found');
+      }
+
+     
+
           const response = await axios.get(
-            `http://localhost:5000/courses/${examinerId}`
+            `http://localhost:5000/courses/${examinerId}`,{
+              headers:{
+                  'Authorization': `Bearer ${userToken}`
+              }
+            }
+
           );
+        
           setCourses(response.data.courses || []); // Ensure courses is an array even if it's empty
         } catch (err) {
-          setError("Failed to fetch courses");
+         // setError("Failed to fetch courses");
+          toast.error("Failed to fetch courses ");
         }
       }
     };
@@ -66,13 +104,13 @@ const handleSubmit = async (e) => {
   try {
     // Basic validation
     if (!courseId) {
-      setError("Please select a valid course.");
+      toast.warning("Please select a valid course.");
       setLoading(false);
       return;
     }
 
     if (!startTime || !endTime) {
-      setError("Start time and end time are required");
+      toast.warning("Start time and end time are required");
       setLoading(false);
       return;
     }
@@ -80,7 +118,8 @@ const handleSubmit = async (e) => {
     // Convert courseId to an integer before submitting
     const formattedCourseId = parseInt(courseId, 10);
     if (isNaN(formattedCourseId)) {
-      setError("Invalid course selection.");
+      toast.warning("invalid course selection ");
+     // setError("Invalid course selection.");
       setLoading(false);
       return;
     }
@@ -119,14 +158,17 @@ const handleSubmit = async (e) => {
       examData,
       {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       }
     );
 
     if (response.status === 200 || response.status === 201) {
       console.log("Success response:", response.data);
-      setSuccessMessage("Exam created successfully!");
+     // setSuccessMessage("Exam created successfully!");
+      toast.success("Exam created successfully!")
+      
       
       // Reset form fields
       setTitle("");
@@ -144,7 +186,8 @@ const handleSubmit = async (e) => {
       setProctoringSettings({});
     } else {
       console.error("Unexpected status:", response.status, response.data);
-      setError(`Failed to create exam. Server returned status: ${response.status}`);
+     // setError(`Failed to create exam. Server returned status: ${response.status}`);
+     toast.error("Failed to create exam, please try again! ")
     }
   } catch (err) {
     console.error("Submission error:", err);
@@ -160,16 +203,20 @@ const handleSubmit = async (e) => {
       
       // Show detailed error if available
       if (err.response.data.details && err.response.data.details.message) {
-        setError(`${errorMessage}: ${err.response.data.details.message}`);
+      //  setError(`${errorMessage}: ${err.response.data.details.message}`);
+        toast.error(`${errorMessage}: ${err.response.data.details.message}`)
       } else {
-        setError(errorMessage);
+     //   setError(errorMessage);
+        toast.error(errorMessage)
       }
     } else if (err.request) {
       console.error("No response received:", err.request);
-      setError("No response received from server. Please check your connection.");
+     // setError("No response received from server. Please check your connection.");
+      toast.error("No response received from server. Please check your connection.")
     } else {
       console.error("Request setup error:", err.message);
-      setError(`Request failed: ${err.message}`);
+      //setError(`Request failed: ${err.message}`);
+      toast.error(`Request failed: ${err.message}`)
     }
   } finally {
     setLoading(false);

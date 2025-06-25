@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify'
+import { isAuthenticated } from '../../../utility/auth';
+import { useNavigate } from 'react-router-dom';
 
 const CreateExam = () => {
   const [exam, setExam] = useState({
@@ -10,6 +13,16 @@ const CreateExam = () => {
     examinerId: '',
     courseId: ''
   });
+    const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/admin_panel" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
+
 
   const handleChange = (event) => {
     setExam({ ...exam, [event.target.name]: event.target.value });
@@ -19,7 +32,8 @@ const CreateExam = () => {
     event.preventDefault();
     try {
       await axios.post('http://localhost:5000/', exam);
-      alert('Exam created successfully');
+      toast.success('Exam created successfully');
+      
     } catch (error) {
       console.error('Error creating exam:', error);
     }

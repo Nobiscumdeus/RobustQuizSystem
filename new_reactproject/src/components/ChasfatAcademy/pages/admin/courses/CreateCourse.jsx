@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';  // Using jwt-decode correctly for decoding JWT
+import { toast } from 'react-toastify';
+import { isAuthenticated } from '../../../utility/auth';
+import { useNavigate } from 'react-router-dom';
+
 
 const CreateCourse = () => {
   const [title, setTitle] = useState('');
@@ -9,6 +13,17 @@ const CreateCourse = () => {
   const [examinerId, setExaminerId] = useState(''); // examinerId will be set from the logged-in user's data
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+    const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/admin_panel" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
+
 
   // Get examinerId from the JWT token when the component mounts
   useEffect(() => {
@@ -31,21 +46,39 @@ const CreateCourse = () => {
     setError(''); // Clear any previous errors
 
     try {
+      const userToken = localStorage.getItem('token');
+
+      //Check if token exists 
+      if(!userToken){
+        throw new Error('Authentication token not found');
+      }
+
+     
+
       const response = await axios.post('http://localhost:5000/courses', {
         title,
         code,
         description,
         examinerId, // Send examinerId with the request
-      });
+      },
+   {
+    headers:{
+       'Authorization': `Bearer ${userToken}`
+    }
+   }
+      
+    );
+
+
 
       // Handle success: notify the user and reset the form
-      alert('Course created successfully!');
+    toast.success('Course created successfully ')
       console.log(response.data); // Log the created course response for debugging
       setTitle('');
       setCode('');
       setDescription('');
     } catch (err) {
-      setError('Failed to create course'); // Show error message if the request fails
+      toast.error('Failed to create course'); // Show error message if the request fails
       console.error(err); // Log error details for debugging
     } finally {
       setLoading(false); // Reset loading state

@@ -2,11 +2,12 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup"; // Import Yup for validation
 import axios from "axios"; // Axios for HTTP Requests
 import { useNavigate, Link } from "react-router-dom";
-import Footer from "../shared/Footer";
+import Footer from "../../shared/Footer";
 import { useSelector } from "react-redux";
-import ScrollDownIcon from "../utility/ScrollDownIcon";
+import ScrollDownIcon from "../../utility/ScrollDownIcon";
 
 import { motion } from "framer-motion";
+import { toast } from "react-toastify"; // Import toast for notifications
 
 
 const RegistrationForm = () => {
@@ -46,15 +47,19 @@ const RegistrationForm = () => {
       );
       localStorage.setItem("token", response.data.token); // Store JWT token
       console.log("Registration successful:", response.data);
+  
 
       navigate("/welcome");
     } catch (error) {
       if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);
+        toast.error("Registration failed. Please check your inputs");
       } else {
-        setErrors({ general: "Registration failed. Please try again." });
+       setErrors({ general: "Registration failed. Please try again." });
+      //  toast.error("Registration failed. Please try again.");
       }
       console.error("Registration error", error);
+      toast.error("Registration failed. Please try again.");
     } finally {
       setSubmitting(false);
     }

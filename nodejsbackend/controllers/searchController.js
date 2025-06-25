@@ -1,11 +1,10 @@
 const { prisma } = require('../database');
 
-
-
 exports.searchAll = async (req, res) => {
   try {
     const { query } = req.query;
-    
+    const examinerId = req.user.userId; // Assuming authenticate middleware adds user info
+
     // Validate search query
     if (!query || query.trim().length < 2) {
       return res.status(400).json({
@@ -14,10 +13,11 @@ exports.searchAll = async (req, res) => {
       });
     }
 
-    // Use Prisma's proper filtering based on your schema
+    // Modified queries to include examinerId filter
     const [exams, students, courses] = await Promise.all([
       prisma.exam.findMany({
         where: {
+          examinerId: examinerId, // Only this examiner's exams
           OR: [
             { title: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
@@ -25,11 +25,13 @@ exports.searchAll = async (req, res) => {
               OR: [
                 { title: { contains: query, mode: 'insensitive' } },
                 { code: { contains: query, mode: 'insensitive' } }
-              ]
+              ],
+              examinerId: examinerId // Also ensure course belongs to examiner
             }}
           ]
         },
-        take: 5,
+        // ... rest remains same
+          take: 5,
         select: {
           id: true,
           title: true,
@@ -45,6 +47,7 @@ exports.searchAll = async (req, res) => {
       
       prisma.student.findMany({
         where: {
+          examinerId: examinerId, // Only this examiner's students
           OR: [
             { firstName: { contains: query, mode: 'insensitive' } },
             { lastName: { contains: query, mode: 'insensitive' } },
@@ -52,7 +55,8 @@ exports.searchAll = async (req, res) => {
             { email: { contains: query, mode: 'insensitive' } }
           ]
         },
-        take: 5,
+   
+          take: 5,
         select: {
           id: true,
           firstName: true,
@@ -64,13 +68,14 @@ exports.searchAll = async (req, res) => {
       
       prisma.course.findMany({
         where: {
+          examinerId: examinerId, // Only this examiner's courses
           OR: [
             { title: { contains: query, mode: 'insensitive' } },
             { code: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } }
           ]
         },
-        take: 5,
+          take: 5,
         select: {
           id: true,
           title: true,
@@ -80,7 +85,9 @@ exports.searchAll = async (req, res) => {
       })
     ]);
 
-    // Format exam results to include course information
+    // ... rest of the formatting and response logic remains same
+
+        // Format exam results to include course information
     const formattedExams = exams.map(exam => ({
       id: exam.id,
       title: exam.title,
@@ -94,6 +101,8 @@ exports.searchAll = async (req, res) => {
                     students.length === 0 &&
                     courses.length === 0;
 
+
+
     res.json({
       success: true,
       message: isEmpty ? "No results found" : "Search successful",
@@ -105,8 +114,10 @@ exports.searchAll = async (req, res) => {
       isEmpty
     });
     
+
   } catch (error) {
-    console.error('Search error:', error);
+    // ... error handling
+     console.error('Search error:', error);
     res.status(500).json({
       success: false,
       message: "An error occurred during search",

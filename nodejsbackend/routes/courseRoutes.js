@@ -5,6 +5,7 @@ const router = express.Router();
 
 
 
+//router.post('/courses',authenticate,courseController.createCourse);
 router.post('/courses',authenticate,courseController.createCourse);
 router.get('/courses/:examinerId', authenticate,courseController.getCoursesByExaminer);
 router.get('/courses-exams/:examinerId',authenticate, courseController.getCoursesAndExamsForRegistration);
@@ -16,13 +17,19 @@ router.get('/course/:courseId/edit', authenticate, courseController.getCourseFor
 router.put('/course/:courseId', authenticate, courseController.updateCourse);
 
 
+
+
 router.post('/exams',authenticate, courseController.createExam);
 router.get('/exams/:examinerId',authenticate, courseController.getExamsByExaminer);
 router.get('/singleexam/:examId',authenticate, courseController.getExamById);
 router.get('/exam/:examId/edit', authenticate,courseController.getExamForEdit);
 router.put('/exam/:examId',authenticate, courseController.updateExam);
-//router.patch('/:id/publish', authMiddleware, examController.togglePublishStatus);
 
+// New route for deleting an exam
+router.delete('/exams/:examId', authenticate, courseController.deleteExam);
+
+//New route for deleting a course 
+router.delete('/courses/:courseId',authenticate,courseController.deleteCourse);
 //..............................Student routes..............................
 router.get('/students/:examinerId',authenticate,courseController.getStudentsByExaminer);
 router.get('/student/:studentId',authenticate,courseController.getStudentById);

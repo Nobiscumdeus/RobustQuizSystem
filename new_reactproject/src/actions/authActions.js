@@ -1,3 +1,5 @@
+
+
 import axios from 'axios';
 import { loginStart,loginSuccess, loginFailure, logout, setUser } from '../features/ChasfatAcademy/auth/authSlice';
 
@@ -31,3 +33,4 @@ export const getUser = () => async (dispatch) => {
     console.error('Error fetching user info:', error);
   }
 };
+

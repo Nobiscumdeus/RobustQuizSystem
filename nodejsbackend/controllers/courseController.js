@@ -76,32 +76,6 @@ exports.getCoursesByExaminer = async (req, res) => {
 };
 
 
-exports.getStudentsByExaminer=async(req,res)=>{
-  const examinerId=req.user.userId
-  try {
-    if (!examinerId) {
-      return res.status(400).json({ message: 'Examiner ID is required' });
-    }
-
-    // Retrieve all courses associated with the examiner
-    const students = await prisma.student.findMany({
-      where: {
-        examinerId: parseInt(examinerId), // Ensure examinerId is an integer
-      },
-    });
-
-    if (students.length === 0) {
-      return res.status(404).json({ message: 'No courses found for this examiner' });
-    }
-
-    res.status(200).json({ students });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to retrieve courses. Please try again.' });
-  }
-
-}
 
 
 exports.getCourseById = async (req, res) => {
@@ -389,20 +363,74 @@ exports.updateCourse = async (req, res) => {
 };
 
 
-// Delete course
+
 exports.deleteCourse = async (req, res) => {
+  const courseId = parseInt(req.params.courseId);
+  
+  // Validate courseId
+  if (isNaN(courseId)) {
+    return res.status(400).json({ error: 'Invalid course ID' });
+  }
+  
   try {
-    await prisma.course.delete({
+    const course = await prisma.course.findUnique({
+      where: { id: courseId }
+    });
+    
+    if (!course) {
+      return res.status(404).json({
+        error: 'Course not found',
+        ...(process.env.NODE_ENV === 'development' && { details: 'No course found with that ID' })
+      });
+    }
+    
+    const requestUserId = parseInt(req.user.userId);
+    
+    if (course.examinerId !== requestUserId) {
+      return res.status(403).json({
+        error: 'Not authorized to delete this course',
+        ...(process.env.NODE_ENV === 'development' && { details: 'User ID does not match course owner' })
+      });
+    }
+
+    // First, find all exams for this course
+    const exams = await prisma.exam.findMany({
+      where: { courseId: courseId },
+      select: { id: true }
+    });
+    
+    const examIds = exams.map(exam => exam.id);
+    
+    // Delete associated questions first
+    await prisma.question.deleteMany({
       where: { 
-        id: parseInt(req.params.id),
-        examinerId: req.user.id 
+        examId: { in: examIds } 
       }
     });
-    res.json({ message: 'Course deleted successfully' });
-  } catch (err) {
-    res.status(400).json({ message: 'Failed to delete course', error: err.message });
+    
+    // Then delete the exams
+    await prisma.exam.deleteMany({
+      where: { courseId: courseId }
+    });
+    
+    // Finally delete the course
+    await prisma.course.delete({
+      where: { id: courseId }
+    });
+    
+    res.status(200).json({ message: 'Course and all associated exams and questions deleted successfully' });
+  } catch (error) {
+    console.error('Course deletion error:', error);
+    res.status(500).json({
+      error: 'Error deleting course',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
+
+
+
+
 
 exports.createExam = async (req, res) => {
   const {
@@ -458,6 +486,43 @@ exports.createExam = async (req, res) => {
   }
 };
 
+
+//delete exams
+exports.deleteExam = async (req, res) => {
+  const examId = parseInt(req.params.examId);
+  
+  try {
+    // Optional: First check if the exam exists and if the logged-in user is authorized to delete it
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId }
+    });
+    
+    if (!exam) {
+      return res.status(404).json({ error: 'Exam not found' });
+    }
+    
+    // Get the user ID from the JWT token to verify ownership
+    const requestUserId = parseInt(req.user.userId); // Assuming you have auth middleware that sets req.user
+    
+    // Only allow the examiner who created the exam (or an admin) to delete it
+    if (exam.examinerId !== requestUserId) {
+      return res.status(403).json({ error: 'Not authorized to delete this exam' });
+    }
+    
+    // Proceed with deletion
+    await prisma.exam.delete({
+      where: { id: examId }
+    });
+    
+    res.status(200).json({ message: 'Exam deleted successfully' });
+  } catch (error) {
+    console.error('Exam deletion error:', error);
+    res.status(500).json({
+      error: 'Error deleting exam',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 
 // Get all Exams by Examiner with related data
@@ -790,147 +855,6 @@ exports.getExamForEdit = async (req, res) => {
   }
 };
 
-/*
-// Update exam details
-exports.updateExam = async (req, res) => {
-  const { examId } = req.params;
-  const requestingExaminerId = req.user.userId;
-  const {
-    title,
-    description,
-    date,
-    startTime,
-    endTime,
-    duration,
-    isPublished,
-    courseId,
-    questions // Optional: if updating questions in the same request
-  } = req.body;
-
-  try {
-    // Validate parameters
-    if (!examId) {
-      return res.status(400).json({ message: 'Examiner ID and Exam ID are required' });
-    }
-
-    
-    // Verify requesting examiner matches URL parameter
-   // if (parseInt(examinerId) !== parseInt(requestingExaminerId)) {
-  //    return res.status(403).json({ message: 'Unauthorized access to this exam' });
-   // }
-      
-
-    // Check if exam exists and belongs to examiner
-    const existingExam = await prisma.exam.findUnique({
-      where: { 
-        id: parseInt(examId),
-        examinerId: parseInt(requestingExaminerId)
-      }
-    });
-
-    if (!existingExam) {
-      return res.status(404).json({ message: 'Exam not found or not owned by this examiner' });
-    }
-
-    // Prevent editing if exam is already published
-    if (existingExam.isPublished) {
-      return res.status(400).json({ 
-        message: 'Published exams cannot be modified',
-        exam: existingExam
-      });
-    }
-
-    // Validate required fields
-    if (!title || !date || !duration) {
-      return res.status(400).json({ message: 'Title, date and duration are required' });
-    }
-
-    // Prepare update data
-    const updateData = {
-      title,
-      description: description || null,
-      date: new Date(date),
-      duration: parseInt(duration),
-      courseId: courseId ? parseInt(courseId) : null
-    };
-
-    // Add time fields if provided
-    if (startTime) updateData.startTime = new Date(startTime);
-    if (endTime) updateData.endTime = new Date(endTime);
-
-    // Handle questions updates if provided
-    let questionsUpdate = {};
-    if (questions && Array.isArray(questions)) {
-      // First delete all existing questions and options
-      await prisma.question.deleteMany({
-        where: { examId: parseInt(examId) }
-      });
-
-      // Then create new questions with options
-      questionsUpdate = {
-        questions: {
-          create: questions.map(question => ({
-            text: question.text,
-            type: question.type,
-            points: question.points,
-            options: {
-              create: question.options.map(option => ({
-                text: option.text,
-                isCorrect: option.isCorrect
-              }))
-            }
-          }))
-        }
-      };
-    }
-
-    // Update exam with transaction for data consistency
-    const [updatedExam] = await prisma.$transaction([
-      prisma.exam.update({
-        where: { id: parseInt(examId) },
-        data: {
-          ...updateData,
-          ...questionsUpdate
-        },
-        include: {
-          course: {
-            select: {
-              title: true,
-              code: true
-            }
-          },
-          questions: {
-            include: {
-              options: true
-            }
-          }
-        }
-      }),
-      // Update the questions count if questions were modified
-      questions && Array.isArray(questions) 
-        ? prisma.exam.update({
-            where: { id: parseInt(examId) },
-            data: {
-              totalQuestions: questions.length
-            }
-          })
-        : Promise.resolve(null)
-    ]);
-
-    res.status(200).json({ 
-      message: 'Exam updated successfully',
-      exam: updatedExam
-    });
-
-  } catch (err) {
-    console.error('Error updating exam:', err);
-    res.status(500).json({ 
-      message: 'Failed to update exam',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-  }}
-
-  */
 
   // Update exam details
 exports.updateExam = async (req, res) => {
@@ -1334,3 +1258,30 @@ exports.updateStudent = async (req, res) => {
   }
 };
 
+
+exports.getStudentsByExaminer=async(req,res)=>{
+  const examinerId=req.user.userId
+  try {
+    if (!examinerId) {
+      return res.status(400).json({ message: 'Examiner ID is required' });
+    }
+
+    // Retrieve all courses associated with the examiner
+    const students = await prisma.student.findMany({
+      where: {
+        examinerId: parseInt(examinerId), // Ensure examinerId is an integer
+      },
+    });
+
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'No students found for this examiner' });
+    }
+
+    res.status(200).json({ students });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to retrieve courses. Please try again.' });
+  }
+
+}

@@ -2,29 +2,7 @@
 const { prisma } = require('../database'); // Import prisma client
 // Create a new exam
 
-/*
-export const createExam = async (req, res) => {
-  const { title, date, password, duration, examinerId, courseId } = req.body;
 
-  try {
-    const exam = await prisma.exam.create({
-      data: {
-        title,
-        date,
-        password,
-        duration,
-        examinerId,
-        courseId,
-      },
-    });
-
-    res.status(201).json(exam);
-  } catch (error) {
-    res.status(500).json({ error: 'Error creating exam.' });
-  }
-};
-
-*/
 export const createExam = async (req, res) => {
   // DEBUG: Log the raw request body first
   console.log('Raw request body:', JSON.stringify(req.body, null, 2));

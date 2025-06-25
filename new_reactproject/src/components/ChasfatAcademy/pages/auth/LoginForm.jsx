@@ -3,11 +3,12 @@ import axios from 'axios';
 import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import Footer from '../shared/Footer';
-import ScrollDownIcon from '../utility/ScrollDownIcon';
-import { useState, useEffect } from 'react';
+import Footer from '../../shared/Footer';
+import ScrollDownIcon from '../../utility/ScrollDownIcon';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { toast } from 'react-toastify';
 // Animation variants for entrance and exit
 const containerVariants = {
     hidden: {
@@ -37,7 +38,7 @@ const containerVariants = {
 const LoginForm = () => {
     const navigate = useNavigate();
     const darkMode = useSelector((state) => state.darkMode.darkMode);
-    const [serverError, setServerError] = useState('');
+    // const [serverError, setServerError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Validation schema using Yup
@@ -45,7 +46,7 @@ const LoginForm = () => {
         email: Yup.string().email('Invalid email format').required('Email is required'),
         password: Yup.string().required('Password is required'),
     });
-
+/*
     // Auto-dismiss server error after 5 seconds
     useEffect(() => {
         if (serverError) {
@@ -55,7 +56,7 @@ const LoginForm = () => {
             return () => clearTimeout(timer);
         }
     }, [serverError]);
-
+*/ //We are trying to use toast error in the place of this as of now 
     const handleSubmit = async (values, { resetForm }) => {
         setIsSubmitting(true); // Start loading
         try {
@@ -65,9 +66,12 @@ const LoginForm = () => {
         } catch (error) {
             // Handle server errors
             if (error.response && error.response.data) {
-                setServerError(error.response.data.message || 'Login failed. Please try again.');
+
+              //  setServerError(error.response.data.message || 'Login failed. Please try again.');
+                toast.error('Login failed, please try again. ');
             } else {
-                setServerError('An unexpected error occurred. Please try again.');
+             //   setServerError('An unexpected error occurred. Please try again.');
+                toast.error('An unexpected error occurred. Please try again. ');
             }
         } finally {
             setIsSubmitting(false); // Stop loading
@@ -96,11 +100,13 @@ const LoginForm = () => {
                         <h2 className="text-3xl font-bold text-center mb-6">Login</h2>
 
                         {/* Display server error message */}
+                        {/*}
                         {serverError && (
                             <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
                                 {serverError}
                             </div>
                         )}
+                            */}
 
                         <Formik
                             initialValues={{ email: '', password: '' }}

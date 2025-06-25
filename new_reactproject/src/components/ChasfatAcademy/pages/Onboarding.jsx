@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
-import LogoutForm from './LogoutForm'; // Ensure you have the Logout component imported
+//import LogoutForm from './auth/LogoutForm'; // Ensure you have the Logout component imported
+
+import Logout from './auth/LogoutForm';
+
 import Footer from '../shared/Footer';
 
 import { useSelector } from 'react-redux';
@@ -29,7 +32,10 @@ const Onboarding = () => {
                         >
                             Explore Admin Dashboard
                         </Link>
+                        {/*}
                         <LogoutForm />
+                        */}
+                        <Logout />
                     </div>
                 </div>
             </div>

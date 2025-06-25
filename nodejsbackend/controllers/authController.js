@@ -170,11 +170,6 @@ exports.refreshToken = async (req, res) => {
 };
 
 
-
-
-
-
-
 // Logout function
 exports.logout = (req, res) => {
   // Token removal handled on the frontend; nothing to process here.

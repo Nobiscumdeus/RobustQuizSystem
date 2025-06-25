@@ -1,7 +1,15 @@
-import  { useState } from 'react';
+
+
+
+import  { useState, useEffect } from 'react';
 import axios from 'axios';
 import ScrollDownIcon from '../utility/ScrollDownIcon';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
+import { isAuthenticated } from '../utility/auth';
+import { useNavigate } from 'react-router-dom';
+
+
 const StudentRegistration = () => {
   const [formData, setFormData] = useState({
     matricNo: '',
@@ -9,6 +17,7 @@ const StudentRegistration = () => {
     lastName: '',
     examinerId: '',
   });
+
 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -21,6 +30,20 @@ const StudentRegistration = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  
+  
+      //Authentication check
+       const navigate = useNavigate();
+       useEffect(() => {
+         if (!isAuthenticated()) {
+           navigate("/login", {
+             state: { from: "/admin_panel" },
+             replace: true,
+           });
+         }
+       }, [navigate]);
+
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -38,9 +61,22 @@ const StudentRegistration = () => {
 
     try {
       setLoading(true); // Show loading state
-      const response = await axios.post('http://localhost:5000/api/students', formData);
+      const token =localStorage.getItem('token');
+
+      
+      
+      const response = await axios.post('http://localhost:5000/students', formData,{
+        headers:{
+          Authorization:`Bearer ${token}`,
+         
+        }
+      });
+      
+      
+    
       console.log(response)
-      setSuccess('Student registered successfully!');
+     // setSuccess('Student registered successfully!');
+      toast.success('Student registered successfully!');
       setFormData({
         matricNo: '',
         firstName: '',
@@ -48,7 +84,9 @@ const StudentRegistration = () => {
         examinerId: '',
       });
     } catch (error) {
-      setError(error.response?.data?.error || 'Something went wrong');
+      //setError(error.response?.data?.error || 'Something went wrong');
+     // toast.error(` ${error.response?.data?.error} || Something went wrong, please try again`)
+     toast.error(`Something went wrong, please try again `)
     } finally {
       setLoading(false); // Hide loading state
     }
@@ -63,7 +101,12 @@ const StudentRegistration = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Matriculation Number */}
+
+
+       
+
+
+
           <div>
             <label
               htmlFor="matricNo"
@@ -77,12 +120,14 @@ const StudentRegistration = () => {
               id="matricNo"
               value={formData.matricNo}
               onChange={handleChange}
+              placeholder="e.g., 12345678"
               required
               className="block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* First Name */}
+
+
           <div>
             <label
               htmlFor="firstName"
@@ -96,12 +141,16 @@ const StudentRegistration = () => {
               id="firstName"
               value={formData.firstName}
               onChange={handleChange}
+               placeholder="Enter first name"
               required
               className="block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Last Name */}
+      
+
+
+
           <div>
             <label
               htmlFor="lastName"
@@ -115,12 +164,15 @@ const StudentRegistration = () => {
               id="lastName"
               value={formData.lastName}
               onChange={handleChange}
+               placeholder="Enter last name"
               required
               className="block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Examiner ID */}
+
+
+
           <div>
             <label
               htmlFor="examinerId"
@@ -134,12 +186,15 @@ const StudentRegistration = () => {
               id="examinerId"
               value={formData.examinerId}
               onChange={handleChange}
+              placeholder="Enter examiner ID"
+                min="1"
               required
               className="block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Submit Button */}
+
+
           <div>
             <button
               type="submit"
@@ -150,7 +205,9 @@ const StudentRegistration = () => {
             </button>
           </div>
 
-          {/* Error and Success Messages */}
+
+
+
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           {success && <p className="text-green-500 text-sm text-center">{success}</p>}
         </form>
@@ -162,3 +219,6 @@ const StudentRegistration = () => {
 };
 
 export default StudentRegistration;
+
+
+

@@ -8,12 +8,6 @@ router.get('/api/search/',authenticate,searchAll)
 
 
 
-//router.get('/api/routes', authenticate,searchAll);
-
-
-//Routes for the searching
-//app.get('/api/search/',authenticate,searchAll);
-
 module.exports = router;
 
 

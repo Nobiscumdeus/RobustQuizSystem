@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 
+
 @layer base{
   h1{
     @apply m-3 font-bold text-lg uppercase;

@@ -5,12 +5,6 @@ const upload = require('../utils/upload');
 
 const router = express.Router();
 
-// Create a new question with answers
-//router.post('/questions', upload.single('image'), questionController.createQuestionWithAnswers);
-
-
-
-
 
 
 // Create a new question
