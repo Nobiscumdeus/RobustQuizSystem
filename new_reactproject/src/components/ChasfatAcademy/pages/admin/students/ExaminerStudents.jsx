@@ -4,10 +4,6 @@ import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useSelector } from "react-redux";
 import {toast} from 'react-toastify'
-import { isAuthenticated } from "../../../utility/auth";
-import { useNavigate } from "react-router-dom";
-
-
 
 
 
@@ -18,15 +14,6 @@ const ExaminerStudents = () => {
   const token = localStorage.getItem("token");
   const darkMode = useSelector((state) => state.darkMode.darkMode);
 
-    const navigate = useNavigate();
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
 
 
   // Fetch students by examiner

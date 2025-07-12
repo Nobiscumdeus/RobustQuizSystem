@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState} from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
+
+
 
 const RegisterStudentsForm = () => {
   const [students, setStudents] = useState([{ matricNo: "", firstName: "", lastName: "" }]);
@@ -7,6 +10,9 @@ const RegisterStudentsForm = () => {
   const [courseId, setCourseId] = useState(""); // Course ID for the students
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+
+
 
   // Handle input change for students
   const handleStudentChange = (index, event) => {
@@ -75,6 +81,7 @@ const RegisterStudentsForm = () => {
     } catch (error) {
       console.error(error);
       setError("An error occurred while registering students");
+      toast.warning("Please ensure to set up course(s) and exam(s) before registering students ")
       setLoading(false);
     }
   };

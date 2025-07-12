@@ -2,25 +2,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { isAuthenticated } from '../../../utility/auth';
+
 
 const ViewStudentPage = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
+
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
 
-  // Authentication check
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
+
 
   // Fetch student data
   useEffect(() => {

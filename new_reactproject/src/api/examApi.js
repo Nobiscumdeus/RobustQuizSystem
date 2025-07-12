@@ -1,46 +1,33 @@
-// api/examApi.js
-import axios from 'axios'
 
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+import { createApi } from "@reduxjs/toolkit/query"
+
+export const examApi=createApi({
+    endpoints:(builder)=>({
+        //Basic exam model operations 
+        getExams:builder.query({
+            query:()=>'/exams'
+        }),
+        getExamById:builder.query({
+            query:(id)=>`/exams/${id}`
+        }),
+        createExam:builder.mutation({
+            query:(examData)=>({
+                url:'/exams',
+                method:'POST',
+                body:examData
+            })
+        }),
+        //Simple questions operation
+        getExamQuestions:builder.query({
+            query:(examId)=>`/exams/${examId}/questions`
+        }),
+        addQuestion:builder.mutation({
+            query:({examId,questionData}) =>({
+                url:`/exams/${examId}/questions`,
+                method:'POST',
+                body:questionData
+            })
+        })
+    })
+    
 })
-
-// Add request interceptor to include auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Exam API functions
-const examApi = {
-  // Get all exams
-  getExams: () => api.get('/exams'),
-  
-  // Get exam by ID
-  getExam: (id) => api.get(`/exam/${id}`),
-  
-  // Start exam
-  startExam: (examId) => api.post(`/exam/${examId}/start`),
-  
-  // Submit exam
-  submitExam: (examId, answers) => api.post(`/exam/${examId}/submit`, { answers }),
-  
-  // Save progress
-  saveProgress: (examId, answers, currentQuestion) => 
-    api.put(`/exam/${examId}/progress`, { answers, currentQuestion }),
-  
-  // Get exam questions
-  getQuestions: (examId) => api.get(`/exam/${examId}/questions`),
-  
-  // Get exam results
-  getResults: (examId) => api.get(`/exam/${examId}/results`),
-}
-
-export default examApi

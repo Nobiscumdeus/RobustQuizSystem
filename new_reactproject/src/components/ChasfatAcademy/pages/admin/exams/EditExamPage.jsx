@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { isAuthenticated } from '../../../utility/auth';
+
 
 const EditExamPage = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
+
   const [exam, setExam] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -26,15 +27,7 @@ const EditExamPage = () => {
   const [courses, setCourses] = useState([]);
   const token = localStorage.getItem('token');
 
-  // Authentication check
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
+
 
   // Format date for datetime-local input
   const formatDateTimeForInput = (dateString) => {

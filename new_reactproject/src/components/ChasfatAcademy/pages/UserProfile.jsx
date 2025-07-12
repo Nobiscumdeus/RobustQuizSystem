@@ -1,7 +1,29 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { User, Mail, Phone,  Calendar, Camera, Edit3, Save, X, Eye, EyeOff, Award, BookOpen, Trophy, Target, Users, FileText,  CheckCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Camera,
+  Edit3,
+  Save,
+  X,
+  Eye,
+  EyeOff,
+  Award,
+  BookOpen,
+  Trophy,
+  Target,
+  Users,
+  FileText,
+  CheckCircle,
+} from "lucide-react";
 import axios from "axios";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "../utility/auth";
+import { Link } from "react-router-dom";
 
 const UserProfile = () => {
   const [userData, setUserData] = useState(null);
@@ -10,8 +32,20 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeSection, setActiveSection] = useState('personal');
+  const [activeSection, setActiveSection] = useState("personal");
   const [error, setError] = useState(null);
+
+  const darkMode = useSelector((state) => state.darkMode.darkMode);
+  //Authentication check
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+        state: { from: "/profile" },
+        replace: true,
+      });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -21,9 +55,9 @@ const UserProfile = () => {
         const response = await axios.get("http://localhost:5000/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
-          }
+          },
         });
-        
+
         if (response.data.success) {
           setUserData(response.data.data);
           setEditedData(response.data.data);
@@ -35,77 +69,114 @@ const UserProfile = () => {
         setLoading(false);
       }
     };
-    
+
     fetchUserData();
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     const token = localStorage.getItem("token");
-    
+
     try {
-      const response = await axios.put("http://localhost:5000/profile", {
-        firstName: editedData.firstName,
-        lastName: editedData.lastName,
-        phone: editedData.phone,
-        avatarUrl: editedData.avatarUrl
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.put(
+        "http://localhost:5000/profile",
+        {
+          firstName: editedData.firstName,
+          lastName: editedData.lastName,
+          phone: editedData.phone,
+          avatarUrl: editedData.avatarUrl,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       if (response.data.success) {
-        setUserData(prev => ({ ...prev, ...response.data.data }));
+        setUserData((prev) => ({ ...prev, ...response.data.data }));
         setIsEditing(false);
-        alert('Profile updated successfully!');
+        alert("Profile updated successfully!");
       }
     } catch (error) {
       console.error("Error updating profile", error);
-      alert('Failed to update profile');
+      alert("Failed to update profile");
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setEditedData({...userData});
+    setEditedData({ ...userData });
     setIsEditing(false);
   };
 
   const handleInputChange = (field, value) => {
-    setEditedData(prev => ({
+    setEditedData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const ProfileField = ({ icon: Icon, label, value, field, type = "text", editable = true }) => (
-    <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+  const ProfileField = ({
+    icon: Icon,
+    label,
+    value,
+    field,
+    type = "text",
+    editable = true,
+  }) => (
+    <div
+      className={`flex items-center space-x-4 p-4 rounded-xl hover:bg-gray-100 transition-colors ${
+        darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-50"
+      }`}
+    >
       <div className="flex-shrink-0">
-        <Icon className="w-5 h-5 text-gray-600" />
+        <Icon
+          className={`w-5 h-5 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
+        />
       </div>
       <div className="flex-1">
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label
+          className={`block text-sm font-medium mb-1 ${
+            darkMode ? "text-gray-200" : "text-gray-700"
+          }`}
+        >
+          {label}
+        </label>
         {isEditing && editable ? (
           type === "textarea" ? (
             <textarea
-              value={editedData[field] || ''}
+              value={editedData[field] || ""}
               onChange={(e) => handleInputChange(field, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                darkMode
+                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  : "border-gray-300"
+              }`}
               rows="3"
             />
           ) : (
             <input
               type={type}
-              value={editedData[field] || ''}
+              value={editedData[field] || ""}
               onChange={(e) => handleInputChange(field, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                darkMode
+                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  : "border-gray-300"
+              }`}
             />
           )
         ) : (
-          <p className="text-gray-800 font-medium">
-            {type === "date" && value ? new Date(value).toLocaleDateString() : (value || 'Not provided')}
+          <p
+            className={`font-medium ${
+              darkMode ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            {type === "date" && value
+              ? new Date(value).toLocaleDateString()
+              : value || "Not provided"}
           </p>
         )}
       </div>
@@ -118,15 +189,31 @@ const UserProfile = () => {
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     field: PropTypes.string.isRequired,
     type: PropTypes.oneOf(["text", "email", "tel", "date", "textarea"]),
-    editable: PropTypes.bool
+    editable: PropTypes.bool,
   };
 
   const StatCard = ({ icon: Icon, title, value, color }) => (
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+    <div
+      className={`p-6 rounded-2xl shadow-lg border ${
+        darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
+          <p
+            className={`text-sm font-medium ${
+              darkMode ? "text-gray-300" : "text-gray-600"
+            }`}
+          >
+            {title}
+          </p>
+          <p
+            className={`text-2xl font-bold mt-1 ${
+              darkMode ? "text-white" : "text-gray-800"
+            }`}
+          >
+            {value}
+          </p>
         </div>
         <div className={`p-3 rounded-full ${color}`}>
           <Icon className="w-6 h-6 text-white" />
@@ -139,7 +226,7 @@ const UserProfile = () => {
     icon: PropTypes.elementType.isRequired,
     title: PropTypes.string.isRequired,
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    color: PropTypes.string.isRequired
+    color: PropTypes.string.isRequired,
   };
 
   // Loading state
@@ -157,10 +244,18 @@ const UserProfile = () => {
   // Error state
   if (error || !userData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          darkMode
+            ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700"
+            : "bg-gradient-to-br from-blue-50 via-white to-purple-50"
+        }`}
+      >
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <p className="text-gray-600">{error || "Failed to load profile"}</p>
+          <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
+            {error || "Failed to load profile"}
+          </p>
         </div>
       </div>
     );
@@ -168,59 +263,59 @@ const UserProfile = () => {
 
   // Generate stats based on role
   const getStatsForRole = () => {
-    if (userData.role === 'student') {
+    if (userData.role === "student") {
       return [
         {
           icon: Trophy,
           title: "Exams Completed",
           value: userData.stats?.examsCompleted || 0,
-          color: "bg-blue-500"
+          color: "bg-blue-500",
         },
         {
           icon: Target,
           title: "Average Score",
           value: `${userData.stats?.averageScore || 0}%`,
-          color: "bg-green-500"
+          color: "bg-green-500",
         },
         {
           icon: BookOpen,
           title: "Courses Enrolled",
           value: userData.stats?.coursesEnrolled || 0,
-          color: "bg-purple-500"
+          color: "bg-purple-500",
         },
         {
           icon: Award,
           title: "Achievements",
           value: userData.stats?.achievements || 0,
-          color: "bg-orange-500"
-        }
+          color: "bg-orange-500",
+        },
       ];
-    } else if (userData.role === 'examiner') {
+    } else if (userData.role === "examiner") {
       return [
         {
           icon: Users,
           title: "Students Managed",
           value: userData.stats?.studentsManaged || 0,
-          color: "bg-blue-500"
+          color: "bg-blue-500",
         },
         {
           icon: FileText,
           title: "Exams Created",
           value: userData.stats?.examsCreated || 0,
-          color: "bg-green-500"
+          color: "bg-green-500",
         },
         {
           icon: BookOpen,
           title: "Courses Teaching",
           value: userData.stats?.coursesTeaching || 0,
-          color: "bg-purple-500"
+          color: "bg-purple-500",
         },
         {
           icon: CheckCircle,
           title: "Total Submissions",
           value: userData.stats?.totalSubmissions || 0,
-          color: "bg-orange-500"
-        }
+          color: "bg-orange-500",
+        },
       ];
     }
     return [];
@@ -230,83 +325,83 @@ const UserProfile = () => {
 
   // Generate achievements based on user role and stats
   const getAchievements = () => {
-    if (userData.role === 'student') {
+    if (userData.role === "student") {
       return [
-        { 
-          title: "First Quiz", 
-          desc: "Completed your first quiz", 
-          color: "bg-green-500", 
-          earned: (userData.stats?.examsCompleted || 0) > 0 
+        {
+          title: "First Quiz",
+          desc: "Completed your first quiz",
+          color: "bg-green-500",
+          earned: (userData.stats?.examsCompleted || 0) > 0,
         },
-        { 
-          title: "Perfect Score", 
-          desc: "Scored 100% on a quiz", 
-          color: "bg-yellow-500", 
-          earned: (userData.stats?.averageScore || 0) >= 100 
+        {
+          title: "Perfect Score",
+          desc: "Scored 100% on a quiz",
+          color: "bg-yellow-500",
+          earned: (userData.stats?.averageScore || 0) >= 100,
         },
-        { 
-          title: "Quick Learner", 
-          desc: "Completed 10 quizzes", 
-          color: "bg-blue-500", 
-          earned: (userData.stats?.examsCompleted || 0) >= 10 
+        {
+          title: "Quick Learner",
+          desc: "Completed 10 quizzes",
+          color: "bg-blue-500",
+          earned: (userData.stats?.examsCompleted || 0) >= 10,
         },
-        { 
-          title: "High Achiever", 
-          desc: "Maintain 90% average", 
-          color: "bg-purple-500", 
-          earned: (userData.stats?.averageScore || 0) >= 90 
+        {
+          title: "High Achiever",
+          desc: "Maintain 90% average",
+          color: "bg-purple-500",
+          earned: (userData.stats?.averageScore || 0) >= 90,
         },
-        { 
-          title: "Course Explorer", 
-          desc: "Enrolled in 5+ courses", 
-          color: "bg-indigo-500", 
-          earned: (userData.stats?.coursesEnrolled || 0) >= 5 
+        {
+          title: "Course Explorer",
+          desc: "Enrolled in 5+ courses",
+          color: "bg-indigo-500",
+          earned: (userData.stats?.coursesEnrolled || 0) >= 5,
         },
-        { 
-          title: "Master Student", 
-          desc: "Complete 50 quizzes", 
-          color: "bg-red-500", 
-          earned: (userData.stats?.examsCompleted || 0) >= 50 
-        }
+        {
+          title: "Master Student",
+          desc: "Complete 50 quizzes",
+          color: "bg-red-500",
+          earned: (userData.stats?.examsCompleted || 0) >= 50,
+        },
       ];
     } else {
       return [
-        { 
-          title: "First Course", 
-          desc: "Created your first course", 
-          color: "bg-green-500", 
-          earned: (userData.stats?.coursesTeaching || 0) > 0 
+        {
+          title: "First Course",
+          desc: "Created your first course",
+          color: "bg-green-500",
+          earned: (userData.stats?.coursesTeaching || 0) > 0,
         },
-        { 
-          title: "Exam Creator", 
-          desc: "Created 10+ exams", 
-          color: "bg-blue-500", 
-          earned: (userData.stats?.examsCreated || 0) >= 10 
+        {
+          title: "Exam Creator",
+          desc: "Created 10+ exams",
+          color: "bg-blue-500",
+          earned: (userData.stats?.examsCreated || 0) >= 10,
         },
-        { 
-          title: "Popular Teacher", 
-          desc: "Managing 50+ students", 
-          color: "bg-purple-500", 
-          earned: (userData.stats?.studentsManaged || 0) >= 50 
+        {
+          title: "Popular Teacher",
+          desc: "Managing 50+ students",
+          color: "bg-purple-500",
+          earned: (userData.stats?.studentsManaged || 0) >= 50,
         },
-        { 
-          title: "Active Educator", 
-          desc: "Teaching 5+ courses", 
-          color: "bg-yellow-500", 
-          earned: (userData.stats?.coursesTeaching || 0) >= 5 
+        {
+          title: "Active Educator",
+          desc: "Teaching 5+ courses",
+          color: "bg-yellow-500",
+          earned: (userData.stats?.coursesTeaching || 0) >= 5,
         },
-        { 
-          title: "Assessment Pro", 
-          desc: "1000+ submissions received", 
-          color: "bg-indigo-500", 
-          earned: (userData.stats?.totalSubmissions || 0) >= 1000 
+        {
+          title: "Assessment Pro",
+          desc: "1000+ submissions received",
+          color: "bg-indigo-500",
+          earned: (userData.stats?.totalSubmissions || 0) >= 1000,
         },
-        { 
-          title: "Master Educator", 
-          desc: "Created 100+ exams", 
-          color: "bg-red-500", 
-          earned: (userData.stats?.examsCreated || 0) >= 100 
-        }
+        {
+          title: "Master Educator",
+          desc: "Created 100+ exams",
+          color: "bg-red-500",
+          earned: (userData.stats?.examsCreated || 0) >= 100,
+        },
       ];
     }
   };
@@ -314,19 +409,36 @@ const UserProfile = () => {
   const achievements = getAchievements();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div
+      className={`min-h-screen ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-900 via-gray-700 to-gray-600"
+          : "bg-gradient-to-br from-blue-50 via-white to-purple-50"
+      }`}
+    >
       <div className="max-w-4xl mx-auto px-6 py-8">
-        
         {/* Profile Header */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 px-8 py-12 relative">
+        <div
+          className={`rounded-3xl shadow-xl overflow-hidden mb-8 ${
+            darkMode ? "bg-gray-800" : "bg-white"
+          }`}
+        >
+          <div
+            className={`bg-gradient-to-r ${
+              darkMode
+                ? "from-gray-500 via-purple-600 to-gray-300"
+                : "from-blue-600 via-purple-600 to-indigo-700"
+            } px-8 py-12 relative`}
+          >
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-              
               {/* Avatar Section */}
               <div className="relative group">
                 <img
-                  src={userData.avatarUrl || `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=4F46E5&color=fff&size=150`}
+                  src={
+                    userData.avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=4F46E5&color=fff&size=150`
+                  }
                   alt="Profile"
                   className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
                 />
@@ -346,18 +458,20 @@ const UserProfile = () => {
                   {userData.firstName} {userData.lastName}
                 </h1>
                 <p className="text-blue-100 text-xl mb-1">
-                  {userData.role === 'student' 
-                    ? `${userData.studentInfo?.department || 'Student'} • ${userData.studentInfo?.level || ''}`
-                    : 'Examiner'
-                  }
+                  {userData.role === "student"
+                    ? `${userData.studentInfo?.department || "Student"} • ${
+                        userData.studentInfo?.level || ""
+                      }`
+                    : "Examiner"}
                 </p>
                 <p className="text-blue-200 mb-4">@{userData.username}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                  {userData.role === 'student' && userData.studentInfo?.matricNo && (
-                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-                      {userData.studentInfo.matricNo}
-                    </span>
-                  )}
+                  {userData.role === "student" &&
+                    userData.studentInfo?.matricNo && (
+                      <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+                        {userData.studentInfo.matricNo}
+                      </span>
+                    )}
                   <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
                     Member since {new Date(userData.memberSince).getFullYear()}
                   </span>
@@ -368,7 +482,7 @@ const UserProfile = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-3">
+              <div className="flex flex-col space-x-3 space-y-2">
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
@@ -389,7 +503,7 @@ const UserProfile = () => {
                       ) : (
                         <Save className="w-5 h-5" />
                       )}
-                      <span>{saving ? 'Saving...' : 'Save'}</span>
+                      <span>{saving ? "Saving..." : "Save"}</span>
                     </button>
                     <button
                       onClick={handleCancel}
@@ -400,6 +514,23 @@ const UserProfile = () => {
                     </button>
                   </div>
                 )}
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/admin_panel"
+                    title="Back"
+                    className={`
+      px-4 py-2 rounded-md 
+      ${
+        darkMode
+          ? "bg-white rounded-md text-blue-500 "
+          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+      }
+      transition-colors duration-200
+    `}
+                  >
+                    Back
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -419,21 +550,37 @@ const UserProfile = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-2xl shadow-lg mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+        <div
+          className={`rounded-2xl shadow-lg mb-8 ${
+            darkMode ? "bg-gray-800" : "bg-white"
+          }`}
+        >
+          <div
+            className={`border-b ${
+              darkMode ? "border-gray-700" : "border-gray-200"
+            }`}
+          >
+            <nav
+              className={`flex space-x-8 px-6 ${
+                darkMode
+                  ? " bg-gradient-to-br from-purple-900 via-gray-500 to-gray-300"
+                  : " bg-gradient-to-br from-blue-50 via-white to-purple-50"
+              }`}
+            >
               {[
-                { id: 'personal', label: 'Personal Info', icon: User },
-                { id: 'account', label: 'Account Settings', icon: Edit3 },
-                { id: 'achievements', label: 'Achievements', icon: Award }
+                { id: "personal", label: "Personal Info", icon: User },
+                { id: "account", label: "Account Settings", icon: Edit3 },
+                { id: "achievements", label: "Achievements", icon: Award },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setActiveSection(id)}
                   className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
                     activeSection === id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? "border-blue-500 text-blue-600"
+                      : darkMode
+                      ? "border-transparent text-gray-300 hover:text-gray-200 hover:border-gray-600"
+                      : "border-transparent text-gray-600 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -444,10 +591,16 @@ const UserProfile = () => {
           </div>
 
           <div className="p-6">
-            {activeSection === 'personal' && (
+            {activeSection === "personal" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-6">Personal Information</h3>
+                  <h3
+                    className={`text-xl font-semibold mb-6 ${
+                      darkMode ? "text-white" : "text-gray-800"
+                    }`}
+                  >
+                    Personal Information
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ProfileField
                       icon={User}
@@ -492,11 +645,17 @@ const UserProfile = () => {
                       editable={false}
                     />
                   </div>
-                  
+
                   {/* Role-specific information */}
-                  {userData.role === 'student' && userData.studentInfo && (
+                  {userData.role === "student" && userData.studentInfo && (
                     <div className="mt-6">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Student Information</h4>
+                      <h4
+                        className={`text-lg font-semibold mb-4 ${
+                          darkMode ? "text-white" : "text-gray-800"
+                        }`}
+                      >
+                        Student Information
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ProfileField
                           icon={FileText}
@@ -526,49 +685,114 @@ const UserProfile = () => {
               </div>
             )}
 
-            {activeSection === 'account' && (
+            {activeSection === "account" && (
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-6">Account Settings</h3>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                  <h4 className="font-semibold text-blue-800 mb-2">Account Status</h4>
+                <h3
+                  className={`text-xl font-semibold mb-6 ${
+                    darkMode ? "text-white" : "text-gray-800"
+                  }`}
+                >
+                  Account Settings
+                </h3>
+
+                <div
+                  className={`border rounded-xl p-6 ${
+                    darkMode
+                      ? "bg-blue-900/20 border-blue-800"
+                      : "bg-blue-50 border-blue-200"
+                  }`}
+                >
+                  <h4
+                    className={`font-semibold mb-2 ${
+                      darkMode ? "text-blue-300" : "text-blue-800"
+                    }`}
+                  >
+                    Account Status
+                  </h4>
                   <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${userData.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm text-gray-600">
-                      Account is {userData.isActive ? 'Active' : 'Inactive'}
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        userData.isActive ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></div>
+                    <span
+                      className={`text-sm ${
+                        darkMode ? "text-gray-300" : "text-gray-600"
+                      }`}
+                    >
+                      Account is {userData.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Last login: {userData.lastLogin ? new Date(userData.lastLogin).toLocaleString() : 'Never'}
+                  <p
+                    className={`text-sm mt-2 ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Last login:{" "}
+                    {userData.lastLogin
+                      ? new Date(userData.lastLogin).toLocaleString()
+                      : "Never"}
                   </p>
                 </div>
-                
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                  <h4 className="font-semibold text-yellow-800 mb-4">Change Password</h4>
+
+                <div
+                  className={`border rounded-xl p-6 ${
+                    darkMode
+                      ? "bg-yellow-900/20 border-yellow-800"
+                      : "bg-yellow-50 border-yellow-200"
+                  }`}
+                >
+                  <h4
+                    className={`font-semibold mb-4 ${
+                      darkMode ? "text-yellow-300" : "text-yellow-800"
+                    }`}
+                  >
+                    Change Password
+                  </h4>
                   <div className="space-y-4">
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
                         placeholder="Current Password"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 ${
+                          darkMode
+                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                            : "border-gray-300"
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 hover:text-gray-700 ${
+                          darkMode
+                            ? "text-gray-400 hover:text-gray-300"
+                            : "text-gray-500"
+                        }`}
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                     <input
                       type="password"
                       placeholder="New Password"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        darkMode
+                          ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                          : "border-gray-300"
+                      }`}
                     />
                     <input
                       type="password"
                       placeholder="Confirm New Password"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        darkMode
+                          ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                          : "border-gray-300"
+                      }`}
                     />
                     <button className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
                       Update Password
@@ -576,10 +800,27 @@ const UserProfile = () => {
                   </div>
                 </div>
 
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-                  <h4 className="font-semibold text-red-800 mb-4">Danger Zone</h4>
-                  <p className="text-red-600 text-sm mb-4">
-                    Once you delete your account, there is no going back. Please be certain.
+                <div
+                  className={`border rounded-xl p-6 ${
+                    darkMode
+                      ? "bg-red-900/20 border-red-800"
+                      : "bg-red-50 border-red-200"
+                  }`}
+                >
+                  <h4
+                    className={`font-semibold mb-4 ${
+                      darkMode ? "text-red-300" : "text-red-800"
+                    }`}
+                  >
+                    Danger Zone
+                  </h4>
+                  <p
+                    className={`text-sm mb-4 ${
+                      darkMode ? "text-red-400" : "text-red-600"
+                    }`}
+                  >
+                    Once you delete your account, there is no going back. Please
+                    be certain.
                   </p>
                   <button className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
                     Delete Account
@@ -588,22 +829,45 @@ const UserProfile = () => {
               </div>
             )}
 
-            {activeSection === 'achievements' && (
+            {activeSection === "achievements" && (
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-6">Your Achievements</h3>
-                
+                <h3
+                  className={`text-xl font-semibold mb-6 ${
+                    darkMode ? "text-white" : "text-gray-800"
+                  }`}
+                >
+                  Your Achievements
+                </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {achievements.map((achievement, index) => (
-                    <div key={index} className={`p-6 rounded-xl border-2 transition-all ${
-                      achievement.earned 
-                        ? 'bg-white border-gray-200 shadow-lg' 
-                        : 'bg-gray-50 border-gray-100 opacity-50'
-                    }`}>
-                      <div className={`w-16 h-16 ${achievement.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                    <div
+                      key={index}
+                      className={`p-6 rounded-xl border-2 transition-all ${
+                        achievement.earned
+                          ? darkMode
+                            ? "bg-gray-800 border-gray-600 shadow-lg"
+                            : "bg-white border-gray-200 shadow-lg"
+                          : darkMode
+                          ? "bg-gray-900 border-gray-700 opacity-50"
+                          : "bg-gray-50 border-gray-100 opacity-50"
+                      }`}
+                    >
+                      <div
+                        className={`w-16 h-16 ${achievement.color} rounded-full flex items-center justify-center mx-auto mb-4`}
+                      >
                         <Award className="w-8 h-8 text-white" />
                       </div>
-                      <h4 className="font-semibold text-gray-800 text-center mb-2">{achievement.title}</h4>
-                      <p className="text-gray-600 text-sm text-center">{achievement.desc}</p>
+                      <h4
+                        className={`font-semibold text-center mb-2 ${
+                          darkMode ? "text-white" : "text-gray-800"
+                        }`}
+                      >
+                        {achievement.title}
+                      </h4>
+                      <p className="text-gray-600 text-sm text-center">
+                        {achievement.desc}
+                      </p>
                       {achievement.earned && (
                         <div className="text-center mt-3">
                           <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">

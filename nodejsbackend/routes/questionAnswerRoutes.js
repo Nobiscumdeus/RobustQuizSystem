@@ -13,4 +13,5 @@ router.post('/questions', upload.single('image'), questionController.createQuest
 // Get all questions for an exam
 router.get('/questions/:examId', questionController.getQuestionsByExam);
 
+
 module.exports = router;

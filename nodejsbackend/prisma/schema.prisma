@@ -21,6 +21,7 @@ model User {
   updatedAt DateTime  @updatedAt // Automatically updated when the user is modified
   courses   Course[]  @relation("CourseExaminer") // If this user is an examiner, they can have multiple courses
 
+  questionBanks QuestionBank[] // Add this line
   //updated schema
   notifications Notification[] // Add this line
   lastName      String? // Missing from current schema
@@ -46,20 +47,18 @@ model Student {
   updatedAt  DateTime     @updatedAt
 
   //updated schema 
-  attendances Attendance[] // Add this line
-  email       String? // Student contact email
-  phone       String? // Student contact phone
-  department  String? // Academic department
-  level       String? // e.g., "100", "200", etc.
-  isActive    Boolean      @default(true)
-  lastActive  DateTime? // Last activity timestamp
+  attendances  Attendance[] // Add this line
+  email        String? // Student contact email
+  phone        String? // Student contact phone
+  department   String? // Academic department
+  level        String? // e.g., "100", "200", etc.
+  isActive     Boolean       @default(true)
+  lastActive   DateTime? // Last activity timestamp
+  examSessions ExamSession[] // ✅ back-reference
 
   @@index([matricNo]) // Faster matric number searches
   @@index([createdAt]) // Better sorting by creation date
-
-
-   @@index([firstName, lastName])
-
+  @@index([firstName, lastName])
 }
 
 model Exam {
@@ -78,6 +77,15 @@ model Exam {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
+  examSessions      ExamSession[] // ✅ back-reference
+  questionAnalytics QuestionAnalytics[] // ✅ back-reference
+
+  // Add these new fields:
+  state       ExamState @default(DRAFT)
+  publishedAt DateTime?
+  activatedAt DateTime?
+  completedAt DateTime?
+
   //updated schema
   attendances Attendance[] // Add this line
 
@@ -90,27 +98,32 @@ model Exam {
   passingScore       Float     @default(60.0) // Minimum passing score
   proctoringSettings Json? // Store proctoring configuration
 
-    @@index([examinerId]) // Speeds up examiner-based queries
-
-    @@index([title])
-     @@index([courseId]) // Index the foreign key
+  @@index([examinerId]) // Speeds up examiner-based queries
+  @@index([title])
+  @@index([courseId]) // Index the foreign key
 }
 
 model Question {
-  id            Int          @id @default(autoincrement())
-  examId        Int
-  exam          Exam         @relation(fields: [examId], references: [id])
-  questionText  String
-  questionType  QuestionType
-  options       String[]
-  correctAnswer String
-  imageUrl      String?
-  category      CategoryType
-  tags          String[]
-  difficulty    String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  answers       Answer[]
+  id             Int          @id @default(autoincrement())
+  examId         Int
+  exam           Exam         @relation(fields: [examId], references: [id])
+  questionBankId Int
+  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id])
+  order          Int // Question order in exam
+  points         Float        @default(1.0)
+  questionText   String
+  questionType   QuestionType
+  options        String[]
+  correctAnswer  String
+  imageUrl       String?
+  category       CategoryType
+  tags           String[]
+  difficulty     String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  answers        Answer[]
+
+  analytics QuestionAnalytics[] // ✅ back-reference
 }
 
 enum QuestionType {
@@ -174,7 +187,7 @@ model Course {
   isActive     Boolean @default(true)
   thumbnailUrl String? // Course image/thumbnail
 
-   @@index([title])
+  @@index([title])
   @@index([code])
 }
 
@@ -198,12 +211,25 @@ model ExamResult {
   ipAddress      String? // For security logging
   deviceInfo     String? // Device used for exam
   answers        Json? // Store student's answer data
+
+  @@unique([studentId, examId]) // Ensure one result per student per exam
 }
 
 enum ExamStatus {
   PENDING
   COMPLETED
+  ARCHIVED // Old exam
   IN_PROGRESS
+}
+
+// Add the new enum
+enum ExamState {
+  DRAFT // Being created
+  READY // Questions added, ready to publish
+  PUBLISHED // Students can see it
+  ACTIVE // Currently running
+  COMPLETED // Finished
+  ARCHIVED // Old exam
 }
 
 // For tracking student attendance/participation
@@ -227,4 +253,54 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   type      String // "info", "warning", "alert"
+}
+
+// Add QuestionBank model
+model QuestionBank {
+  id            Int          @id @default(autoincrement())
+  questionText  String
+  questionType  QuestionType
+  options       String[]
+  correctAnswer String
+  imageUrl      String?
+  category      CategoryType
+  tags          String[]
+  difficulty    String
+  examinerId    Int
+  examiner      User         @relation(fields: [examinerId], references: [id])
+  questions     Question[] // Add opposite relation
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Added exam session tracking
+model ExamSession {
+  id         Int       @id @default(autoincrement())
+  studentId  Int
+  student    Student   @relation(fields: [studentId], references: [id])
+  examId     Int
+  exam       Exam      @relation(fields: [examId], references: [id])
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  ipAddress  String?
+  userAgent  String?
+  isActive   Boolean   @default(true)
+  violations Json? // Store any proctoring violations
+
+  @@unique([studentId, examId])
+}
+
+//newly added question analytics 
+model QuestionAnalytics {
+  id               Int      @id @default(autoincrement())
+  questionId       Int
+  question         Question @relation(fields: [questionId], references: [id])
+  examId           Int
+  exam             Exam     @relation(fields: [examId], references: [id])
+  totalAttempts    Int      @default(0)
+  correctAttempts  Int      @default(0)
+  averageTime      Float? // Average time spent on this question
+  difficultyRating Float? // Calculated difficulty based on performance
+
+  @@unique([questionId, examId])
 }

@@ -1,9 +1,8 @@
-import { useState ,useEffect} from 'react';
+import { useState} from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import ScrollDownIcon from '../utility/ChasfatAcademy/ScrollDownIcon';
-import { isAuthenticated } from '../../../utility/auth';
-import { useNavigate } from 'react-router-dom';
+
 
 const CreateQuestion = ({ examId }) => {
   const [question, setQuestion] = useState({
@@ -15,15 +14,7 @@ const CreateQuestion = ({ examId }) => {
     imageUrl: ''
   });
 
-    const navigate = useNavigate();
-    useEffect(() => {
-      if (!isAuthenticated()) {
-        navigate("/login", {
-          state: { from: "/admin_panel" },
-          replace: true,
-        });
-      }
-    }, [navigate]);
+  
   
   const handleChange = (event) => {
     setQuestion({ ...question, [event.target.name]: event.target.value });

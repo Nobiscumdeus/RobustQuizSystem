@@ -7,6 +7,8 @@ const router = express.Router();
 router.post('/', createExam);
 router.get('/course/:courseId', getExamsByCourse);
 
+
+
 export default router;
 
 

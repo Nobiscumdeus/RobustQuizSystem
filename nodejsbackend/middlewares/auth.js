@@ -43,3 +43,16 @@ exports.authenticate = (req, res, next) => {
   }
 };
 
+exports.examinerOnly=(req,res,next)=>{
+  if(req.user.role !=='examiner'){
+    return res.status(403).json({ error: 'Examiner access required'});
+  }
+  next();
+}
+
+exports.studentOnly=(req,res,next)=>{
+  if(req.user.role  !== 'student'){
+    return res.status(403).json({ error:'Student access required'});
+  }
+  next();
+}

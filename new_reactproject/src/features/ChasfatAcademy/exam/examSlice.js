@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: '/api',
@@ -98,6 +99,16 @@ const initialState = {
   allowReview: true,
   allowFlagging: true,
   shuffleQuestions: false,
+
+  //others 
+  currentQuestion:0,
+  timeRemaining:0,
+  isExamActive:false,
+  navigationHistory:[], //UI state
+  showConfirmDialog:false , //UI state
+  proctoringWarnings:[] //local tracking 
+
+
 }
 
 const examSlice = createSlice({
@@ -118,6 +129,9 @@ const examSlice = createSlice({
         state.currentQuestionIndex += 1
         state.visitedQuestions.add(state.currentQuestionIndex)
       }
+    },
+    setCurrentQuestion:(state,action)=>{
+      state.currentQuestion=action.payload
     },
     
     previousQuestion: (state) => {
@@ -170,6 +184,10 @@ const examSlice = createSlice({
     // Error handling
     clearError: (state) => {
       state.error = null
+    },
+    //Update timer
+    updateTimer:(state,action)=>{
+      state.timeRemaining=action.payload
     },
     
     // Set exam data
@@ -254,3 +272,44 @@ export const {
 } = examSlice.actions
 
 export default examSlice.reducer
+
+
+
+
+/*
+
+
+// Complex exam operations involving multiple models
+export const startExamSession = createAsyncThunk(
+  'exam/startSession',
+  async ({ examId, studentId }, { dispatch }) => {
+    // 1. Validate exam availability
+    // 2. Check student eligibility  
+    // 3. Create attendance record
+    // 4. Initialize timer
+    // 5. Log exam start in ExamResult
+    // 6. Set up proctoring if enabled
+  }
+)
+
+export const submitExam = createAsyncThunk(
+  'exam/submit',
+  async ({ examId, answers }, { getState, dispatch }) => {
+    // 1. Calculate scores
+    // 2. Update ExamResult model
+    // 3. Create notification
+    // 4. Update attendance
+    // 5. Clean up timer
+    // 6. Generate analytics
+  }
+)
+
+export const autoSaveProgress = createAsyncThunk(
+  'exam/autoSave',
+  async ({ examId, currentAnswers }, { dispatch }) => {
+    // Background auto-save logic
+    // Handle network failures gracefully
+  }
+)
+
+*/

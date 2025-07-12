@@ -3,8 +3,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode"; // Correctly use named import
 import ScrollDownIcon from "../../../utility/ScrollDownIcon";
 import {toast} from 'react-toastify'
-import { isAuthenticated } from "../../../utility/auth";
- import {  useNavigate } from "react-router-dom";
+
 
 const ExamCreation = () => {
   const [title, setTitle] = useState("");
@@ -29,20 +28,6 @@ const ExamCreation = () => {
   const [proctoringSettings, setProctoringSettings] = useState({});
 
   
-
-
-
-
-    //Authentication check
-     const navigate = useNavigate();
-     useEffect(() => {
-       if (!isAuthenticated()) {
-         navigate("/login", {
-           state: { from: "/admin_panel" },
-           replace: true,
-         });
-       }
-     }, [navigate]);
 
   // Decode JWT to get examinerId (userId)
   useEffect(() => {
@@ -88,6 +73,7 @@ const ExamCreation = () => {
         } catch (err) {
          // setError("Failed to fetch courses");
           toast.error("Failed to fetch courses ");
+          toast.warning("Please ensure to register courses before setting up exams")
         }
       }
     };

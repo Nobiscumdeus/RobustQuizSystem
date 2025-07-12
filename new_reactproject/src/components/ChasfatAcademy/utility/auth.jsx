@@ -34,3 +34,49 @@ export const isAuthenticated = () => {
         return false;
     }
 };
+
+//New functions for distinguishing auth states 
+export const isTokenExpired = (token) => {
+    if (!token) return true;
+    
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        return payload.exp < currentTime;
+    } catch (error) {
+        return true;
+    }
+};
+
+export const getAuthState=()=>{
+    const token=localStorage.getItem("token");
+    const wasLoggedIn= localStorage.getItem("wasLoggedIn");
+
+    if(!token && wasLoggedIn ==='true'){
+        return 'expired';
+    }else if (!token){
+        return 'unauthenticated';
+    }else if(isTokenExpired(token)){
+        return 'expired'
+    }
+    return 'authenticated'
+}
+
+
+export const setLoggedIn=()=>{
+    localStorage.setItem('wasLoggedIn','true');
+
+}
+
+export const clearAuthState=()=>{
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('wasLoggedIn');
+
+     // Clear cookies more aggressively
+    document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.trim().split('=');
+        document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    });
+}

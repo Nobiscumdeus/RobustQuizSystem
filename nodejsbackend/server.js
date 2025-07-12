@@ -3,6 +3,10 @@ const cors = require("cors");
 require("dotenv").config();
 const path = require("path");
 
+//importing helmet and rate limiting 
+const helmet = require('helmet');
+const rateLimit =require('express-rate-limit')
+
 const profileRoutes = require("./routes/profileRoutes"); // Adjust path
 const questionRoutes = require("./routes/questionAnswerRoutes");
 const searchRoutes = require("./routes/searchRoutes");
@@ -13,6 +17,10 @@ const studentRoutes = require("./routes/studentRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const dashboardDataRoutes =require('./routes/dashboardDataRoutes')
 const reportRoutes=require('./routes/reportRoutes');
+
+//newly added examiner route 
+const examinerRoutes= require("./routes/examinerRoutes");
+
 
 // Initialize the app
 const app = express();
@@ -77,6 +85,20 @@ app.use(dashboardDataRoutes)
 
 //report routes
 app.use(reportRoutes)
+
+//helmet newly added for security 
+app.use(helmet())
+
+
+//Rate limiting 
+const limiter=rateLimit({
+  windowMs:15*60*1000, //15 minutes 
+  max:100 //limit each IP to 100 requests per windowMS
+})
+app.use(limiter)
+
+//the examiner route
+app.use(examinerRoutes)
 
 // Basic route to check if the API is running
 app.get("/", (req, res) => {

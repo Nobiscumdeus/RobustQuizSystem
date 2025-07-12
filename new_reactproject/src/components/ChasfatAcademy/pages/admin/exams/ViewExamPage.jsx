@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { isAuthenticated } from '../../../utility/auth';
+
 //import { jwtDecode } from 'jwt-decode';
 
 const ViewExamPage = () => {
@@ -10,22 +10,14 @@ const ViewExamPage = () => {
   const { examId} = useParams(); // Add examinerId
 
   const navigate = useNavigate();
+  
+
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
 
 
-    //Authentication check
-
-    useEffect(() => {
-      if (!isAuthenticated()) {
-        navigate("/login", {
-          state: { from: "/admin_panel" },
-          replace: true,
-        });
-      }
-    }, [navigate]);
 
 
   useEffect(() => {

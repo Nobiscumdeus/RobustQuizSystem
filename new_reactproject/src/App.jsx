@@ -26,8 +26,8 @@ import ExamCreation from "./components/ChasfatAcademy/pages/admin/exams/ExamCrea
 //import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
 import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
 
-import RegisterStudentsForm from "./components/ChasfatAcademy/pages/RegisterStudentsForm";
 
+import RegisterStudentsForm from "./components/ChasfatAcademy/pages/admin/registration/RegisterStudentsForm";
 
 import CreateCourse from "./components/ChasfatAcademy/pages/admin/courses/CreateCourse";
 
@@ -138,13 +138,13 @@ function RoutesWrapper() {
       <Route path="/calculator" element={<CalculatorModal />} />
       <Route path="/exam/:examId" element={<ViewExamPage />} />
       <Route path="/exam/:examId/edit" element={<EditExamPage />} />
-      <Route path="/course/:courseId" element={<ViewCoursePage />} />
+      <Route path="/courses /:courseId" element={<ViewCoursePage />} />
       <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
       <Route path="/student/:studentId" element={<ViewStudentPage />} />
       <Route path="/student/:studentId/edit" element={<EditStudentPage />} />
       <Route path="/reports" element={<Reports />} />
     </Routes>
-  );
+  ); 
 }
 
 export default App;

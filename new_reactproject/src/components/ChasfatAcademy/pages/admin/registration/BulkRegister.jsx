@@ -1,8 +1,9 @@
 import { useState,useEffect } from "react";
 import axios from "axios";
 import ScrollDownIcon from "../../../utility/ChasfatAcademy/ScrollDownIcon";
-import { isAuthenticated } from "../utility/auth";
+import { isAuthenticated } from "../../../utility/auth";
 import { useNavigate } from "react-router-dom";
+
 
 
 const BulkRegister = () => {
@@ -57,6 +58,7 @@ const BulkRegister = () => {
       setSuccess(response.data.message || "Bulk registration successful!");
     } catch (error) {
       setError(error.response?.data?.error || "Something went wrong");
+     
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,23 @@
+src/
+├── store/
+│   ├── store.js
+│   ├── api/
+│   │   ├── authApi.js          // RTK Query
+│   │   ├── examApi.js          // RTK Query  
+│   │   ├── courseApi.js        // RTK Query
+│   │   ├── studentApi.js       // RTK Query
+│   │   ├── resultApi.js        // RTK Query
+│   │   └── notificationApi.js  // RTK Query
+│   └── features/
+│       ├── auth/
+│       │   └── authSlice.js    // createAsyncThunk + Regular Reducers
+│       ├── exam/
+│       │   └── examSlice.js    // createAsyncThunk + Regular Reducers
+│       ├── student/
+│       │   └── studentSlice.js // createAsyncThunk + Regular Reducers
+│       ├── result/
+│       │   └── resultSlice.js  // createAsyncThunk + Regular Reducers
+│       ├── ui/
+│       │   ├── darkModeSlice.js    // Regular Reducers Only
+│       │   ├── timerSlice.js       // Regular Reducers Only
+│       │   └── notificationSlice.js // Regular Reducers Only

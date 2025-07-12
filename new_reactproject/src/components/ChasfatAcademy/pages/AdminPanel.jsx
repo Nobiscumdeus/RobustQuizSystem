@@ -17,12 +17,14 @@ import {
 } from "recharts";
  */
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate , useLocation} from "react-router-dom";
 import PropTypes from "prop-types";
 import axios from "axios";
 
 import Spinner from "../utility/Spinner";
 import { isAuthenticated } from "../utility/auth";
+
+
 
 
 import ExaminerExams from "./admin/exams/ExaminerExams";
@@ -64,14 +66,16 @@ function AdminPanel() {
 
   //Authentication check
   const navigate = useNavigate();
+  const location=useLocation();
   useEffect(() => {
     if (!isAuthenticated()) {
       navigate("/login", {
-        state: { from: "/admin_panel" },
+      //  state: { from: "/admin_panel" },
+      state:{from:location.pathname,message:'Session expired, please login to continue'},
         replace: true,
       });
     }
-  }, [navigate]);
+  }, [navigate,location]);
 
   // Add event listener for auth changes
   useEffect(() => {
@@ -624,10 +628,10 @@ function AdminPanel() {
                 className={`px-4 py-2 font-medium ${
                   activeTab === "overview"
                     ? darkMode
-                      ? "border-b-2 border-blue-500 text-gray-700"
+                      ? "border-b-2 border-blue-500 text-blue-800"
                       : "border-b-2 border-blue-600 text-blue-600"
                     : darkMode
-                    ? "text-gray-400"
+                    ? "text-gray-900"
                     : "text-gray-600"
                 }`}
               >
@@ -638,7 +642,7 @@ function AdminPanel() {
                 className={`px-4 py-2 font-medium ${
                   activeTab === "exams"
                     ? darkMode
-                      ? "border-b-2 border-blue-500 text-blue-500"
+                      ? "border-b-2 border-blue-500 text-blue-800"
                       : "border-b-2 border-blue-600 text-blue-600"
                     : darkMode
                     ? "text-gray-700"

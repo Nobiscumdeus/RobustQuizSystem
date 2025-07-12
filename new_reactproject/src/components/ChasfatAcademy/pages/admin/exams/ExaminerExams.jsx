@@ -3,8 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../../../utility/auth";
+
 const ExaminerExams = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,15 +13,7 @@ const ExaminerExams = () => {
 
 
   
-    const navigate = useNavigate();
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
+
 
 
   // Fetch exams by examiner

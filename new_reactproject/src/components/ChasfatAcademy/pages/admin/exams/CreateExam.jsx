@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify'
-import { isAuthenticated } from '../../../utility/auth';
-import { useNavigate } from 'react-router-dom';
 
 const CreateExam = () => {
   const [exam, setExam] = useState({
@@ -13,17 +11,7 @@ const CreateExam = () => {
     examinerId: '',
     courseId: ''
   });
-    const navigate = useNavigate();
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
-
-
+  
   const handleChange = (event) => {
     setExam({ ...exam, [event.target.name]: event.target.value });
   };

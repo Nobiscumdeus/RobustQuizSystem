@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-
+import { clearAuthState } from '../../utility/auth';
 const Logout = () => {
     const navigate = useNavigate();
 
@@ -7,9 +7,11 @@ const Logout = () => {
         // Remove the token from local storage
         localStorage.removeItem('token');
 
+
         // Optionally, you can clear any user-related state here
 
         // Redirect to the login page or home page
+        clearAuthState();
         navigate('/login');
     };
 

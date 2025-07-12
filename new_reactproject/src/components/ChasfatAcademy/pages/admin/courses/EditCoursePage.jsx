@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { isAuthenticated } from '../../../utility/auth';
+import { useNavigate } from 'react-router-dom';
 
 const EditCoursePage = () => {
   const { courseId } = useParams();
-  const navigate = useNavigate();
+
   const [course, setCourse] = useState({
     title: '',
     code: '',
@@ -19,16 +19,7 @@ const EditCoursePage = () => {
   const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
 
-
-    // Authentication check
-    useEffect(() => {
-      if (!isAuthenticated()) {
-        navigate("/login", {
-          state: { from: "/admin_panel" },
-          replace: true,
-        });
-      }
-    }, [navigate]);
+  const navigate =useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {

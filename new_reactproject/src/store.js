@@ -31,9 +31,10 @@ import examReducer from './features/ChasfatAcademy/exam/examSlice';
 import questionReducer from './features/ChasfatAcademy/question/questionSlice';
 import timerReducer from './features/ChasfatAcademy/timer/timerSlice';
 import resultReducer from './features/ChasfatAcademy/result/resultSlice';
-
+import darkModeReducer from './features/ChasfatAcademy/darkmode/darkModeSlice';
+import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice'
 // Importing an API slice created using RTK Query (Redux Toolkit's data-fetching tool).
-import { examApi } from './api/examApi'
+import { examApi } from './api/examApis'
 
 
 export const store =configureStore({
@@ -43,6 +44,8 @@ export const store =configureStore({
     questions:questionReducer,
     timer:timerReducer,
     results:resultReducer,
+    trial_quiz:trial_quizReducer,
+      darkMode: darkModeReducer,  // ✅ Add this back
     //RTK Api reducer 
     [examApi.reducerPath] : examApi.reducer
   },
@@ -56,3 +59,4 @@ export const store =configureStore({
 })
 
 
+export default store
