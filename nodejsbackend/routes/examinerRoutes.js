@@ -1,12 +1,14 @@
-import express from 'express';
 
-const ExaminerController = require('../controllers/examinerController');
-const authenticate =require('../middlewares/auth');
+const {ExaminerController, StudentController} = require('../controllers/examinerController');
+const {authenticate} =require('../middlewares/auth');
 
-
+const express = require('express');
 const router = express.Router();
 
+
 const examinerController =new ExaminerController();
+const studentController=new StudentController();
+
 router.use(authenticate);
 
 router.post('/exams',examinerController.createExam);
@@ -19,10 +21,10 @@ router.get('/exams/:examId/results', examinerController.getExamResults);
 
 
 //Student router later
-router.get('/exams', examinerController.getAvailableExams);
-router.post('/exams/:examId/start', examinerController.startExam);
-router.post('/exams/:examId/submit', examinerController.submitExam);
-router.get('/exam-history', examinerController.getExamHistory);
+router.get('/exams', studentController.getAvailableExams);
+router.post('/exams/:examId/start', studentController.startExam);
+router.post('/exams/:examId/submit', studentController.submitExam);
+router.get('/exam-history', studentController.getExamHistory);
 
-export default router;
+module.exports=router ;
 

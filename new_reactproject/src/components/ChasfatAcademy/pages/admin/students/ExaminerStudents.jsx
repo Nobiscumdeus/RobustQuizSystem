@@ -3,9 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useSelector } from "react-redux";
-import {toast} from 'react-toastify'
-
-
+import { toast } from "react-toastify";
 
 const ExaminerStudents = () => {
   const [students, setStudents] = useState([]);
@@ -13,8 +11,6 @@ const ExaminerStudents = () => {
   const [error, setError] = useState(null);
   const token = localStorage.getItem("token");
   const darkMode = useSelector((state) => state.darkMode.darkMode);
-
-
 
   // Fetch students by examiner
   useEffect(() => {
@@ -33,18 +29,21 @@ const ExaminerStudents = () => {
 
         // Add status based on last activity
         const studentsWithStatus = response.data.students.map((student) => {
-          const lastActiveDate = student.lastActive ? new Date(student.lastActive) : null;
+          const lastActiveDate = student.lastActive
+            ? new Date(student.lastActive)
+            : null;
           const now = new Date();
           const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-          
+
           let status = "active";
           if (!student.isActive) status = "inactive";
-          else if (lastActiveDate && lastActiveDate < thirtyDaysAgo) status = "inactive";
-          
-          return { 
+          else if (lastActiveDate && lastActiveDate < thirtyDaysAgo)
+            status = "inactive";
+
+          return {
             ...student,
             status,
-            fullName: `${student.firstName} ${student.lastName}`
+            fullName: `${student.firstName} ${student.lastName}`,
           };
         });
 
@@ -61,12 +60,16 @@ const ExaminerStudents = () => {
 
   // Action handlers
   const handleDelete = async (studentId) => {
-    if (window.confirm("Are you sure you want to delete this student? This will also delete all associated records.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this student? This will also delete all associated records."
+      )
+    ) {
       try {
         await axios.delete(`http://localhost:5000/students/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success('Student deleted succesfully ')
+        toast.success("Student deleted succesfully ");
         setStudents(students.filter((student) => student.id !== studentId));
       } catch (err) {
         setError("Failed to delete student");
@@ -79,7 +82,8 @@ const ExaminerStudents = () => {
     console.log("Export data for student:", studentId);
   };
 
-  if (loading) return <div className="text-center py-8">Loading students...</div>;
+  if (loading)
+    return <div className="text-center py-8">Loading students...</div>;
   if (error)
     return <div className="text-center text-red-500 py-8">{error}</div>;
 
@@ -90,19 +94,17 @@ const ExaminerStudents = () => {
       } rounded-lg shadow-md p-4`}
     >
       <div className="flex justify-between items-center mb-4">
-        <div>
-
-        </div>
-         <Link
-                    to="/student"
-                    className={`px-4 py-2 rounded-lg ${
-                      darkMode
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-blue-500 hover:bg-blue-600"
-                    } text-white transition`}
-                  >
-                    Add New Student 
-                  </Link>
+        <div></div>
+        <Link
+          to="/student"
+          className={`px-4 py-2 rounded-lg ${
+            darkMode
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-blue-500 hover:bg-blue-600"
+          } text-white transition`}
+        >
+          Add New Student
+        </Link>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -174,9 +176,12 @@ const ExaminerStudents = () => {
                       {student.status === "active" ? "Active" : "Inactive"}
                     </span>
                   </td>
+                 
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {student._count?.courses || 0} enrolled
+                    {student._count?.courseStudents || 0} enrolled{" "}
+                    {/* Changed from courses to courseStudents */}
                   </td>
+
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <Link

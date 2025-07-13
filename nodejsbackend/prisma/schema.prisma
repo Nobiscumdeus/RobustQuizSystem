@@ -46,6 +46,10 @@ model Student {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
+   // ✅ FIX: explicit many-to-many relationship
+  courseStudents CourseStudent[] // Replace: courses Course[]
+
+
   //updated schema 
   attendances  Attendance[] // Add this line
   email        String? // Student contact email
@@ -176,6 +180,10 @@ model Course {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // ✅ FIX: explicit many-to-many relationship
+  courseStudents CourseStudent[] // Replace: students Student[]
+
+
   examiner   User      @relation("CourseExaminer", fields: [examinerId], references: [id])
   examinerId Int // foreign key to the User (examiner)
   students   Student[] // Many-to-many relation with students
@@ -303,4 +311,20 @@ model QuestionAnalytics {
   difficultyRating Float? // Calculated difficulty based on performance
 
   @@unique([questionId, examId])
+}
+
+
+
+// ✅ ADD: Explicit join table for Course-Student relationship
+model CourseStudent {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime @default(now())
+
+  @@unique([courseId, studentId]) // Prevent duplicate enrollments
+  @@index([courseId])
+  @@index([studentId])
 }

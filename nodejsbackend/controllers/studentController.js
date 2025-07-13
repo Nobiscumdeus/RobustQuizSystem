@@ -2,6 +2,130 @@
 const { prisma } = require('../database'); // Import prisma client
 //const { prisma } = require('../database'); // Import prisma client
 
+
+
+exports.registerStudent = async (req, res) => {
+  const { students, courseId, examId } = req.body;
+  const examinerId = req.user.userId;
+
+  console.log('Authenticated User:', req.user);
+  console.log('Examiner ID:', examinerId);
+
+  const parsedExamId = parseInt(examId, 10);
+  const parsedCourseId = parseInt(courseId, 10);
+
+  if (!parsedExamId || isNaN(parsedExamId)) {
+    return res.status(400).json({ message: 'Invalid exam ID' });
+  }
+
+  if (!parsedCourseId || isNaN(parsedCourseId)) {
+    return res.status(400).json({ message: 'Invalid course ID' });
+  }
+
+  try {
+    // Check if the current user is an examiner
+    const examiner = await prisma.user.findUnique({
+      where: { id: examinerId },
+    });
+
+    console.log('Examiner from DB:', examiner);
+
+    if (!examiner) {
+      return res.status(403).json({ message: 'Not authorized to register students' });
+    }
+
+    // Check if the exam exists
+    const examExists = await prisma.exam.findUnique({
+      where: { id: parsedExamId },
+    });
+
+    if (!examExists) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
+    // Check if the course exists
+    const courseExists = await prisma.course.findUnique({
+      where: { id: parsedCourseId },
+    });
+
+    if (!courseExists) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Create students
+    const createdStudents = await Promise.all(
+      students.map(async (student) => {
+        const existingStudent = await prisma.student.findUnique({
+          where: { matricNo: student.matricNo },
+        });
+
+        if (existingStudent) {
+          console.log(`Student with matricNo ${student.matricNo} already exists`);
+          return existingStudent; // Return existing student instead of null
+        }
+
+        return await prisma.student.create({
+          data: {
+            matricNo: student.matricNo,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            examinerId: examinerId,
+          },
+        });
+      })
+    );
+
+    const validStudents = createdStudents.filter(student => student !== null);
+
+    if (validStudents.length === 0) {
+      return res.status(400).json({ message: 'No students to register' });
+    }
+
+    const studentIds = validStudents.map(student => student.id);
+
+    // ✅ FIX: Connect students to both exam and course using proper relationships
+    await Promise.all([
+      // Connect to exam (existing relationship works)
+      prisma.exam.update({
+        where: { id: parsedExamId },
+        data: {
+          students: {
+            connect: studentIds.map(id => ({ id })),
+          },
+        },
+      }),
+      
+      // ✅ FIX: Connect to course using the new CourseStudent join table
+      ...studentIds.map(studentId => 
+        prisma.courseStudent.upsert({
+          where: {
+            courseId_studentId: {
+              courseId: parsedCourseId,
+              studentId: studentId,
+            },
+          },
+          update: {}, // Do nothing if already exists
+          create: {
+            courseId: parsedCourseId,
+            studentId: studentId,
+          },
+        })
+      ),
+    ]);
+
+    res.status(200).json({
+      message: `${validStudents.length} students registered successfully for both course and exam!`,
+      students: validStudents,
+      examinerId,
+    });
+  } catch (err) {
+    console.error('Error occurred:', err);
+    console.error('Error stack:', err.stack);
+    res.status(500).json({ message: 'Failed to register students', error: err.message });
+  }
+};
+
+
 /*
 exports.registerStudent = async (req, res) => {
   const { students, courseId, examId } = req.body;
@@ -96,123 +220,7 @@ exports.registerStudent = async (req, res) => {
   }
 };
 */
-exports.registerStudent = async (req, res) => {
-  const { students, courseId, examId } = req.body;
-  const examinerId = req.user.userId;
 
-  // Log req.user to verify the user details
-  console.log('Authenticated User:', req.user);
-  console.log('Examiner ID:', examinerId);
-
-  const parsedExamId = parseInt(examId, 10);
-  const parsedCourseId = parseInt(courseId, 10);
-
-  if (!parsedExamId || isNaN(parsedExamId)) {
-    return res.status(400).json({ message: 'Invalid exam ID' });
-  }
-
-  if (!parsedCourseId || isNaN(parsedCourseId)) {
-    return res.status(400).json({ message: 'Invalid course ID' });
-  }
-
-  try {
-    // Check if the current user is an examiner
-    const examiner = await prisma.user.findUnique({
-      where: { id: examinerId },
-    });
-
-    console.log('Examiner from DB:', examiner);
-
-    if (!examiner) {
-      return res.status(403).json({ message: 'Ooops!!! Not authorized to register students' });
-    }
-
-    // ✅ FIX: Check if the exam exists (was using wrong ID)
-    const examExists = await prisma.exam.findUnique({
-      where: { id: parsedExamId }, // Changed from parsedCourseId
-    });
-
-    if (!examExists) {
-      return res.status(404).json({ message: 'Exam not found' });
-    }
-
-    // ✅ FIX: Check if the course exists (was missing)
-    const courseExists = await prisma.course.findUnique({
-      where: { id: parsedCourseId },
-    });
-
-    if (!courseExists) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-
-    // ✅ FIX: Verify the exam belongs to the course (optional but recommended)
-    if (examExists.courseId !== parsedCourseId) {
-      return res.status(400).json({ message: 'Exam does not belong to the specified course' });
-    }
-
-    const createdStudents = await Promise.all(
-      students.map(async (student) => {
-        const existingStudent = await prisma.student.findUnique({
-          where: { matricNo: student.matricNo },
-        });
-
-        if (existingStudent) {
-          console.log(`Student with matricNo ${student.matricNo} already exists`);
-          return null;
-        }
-
-        return await prisma.student.create({
-          data: {
-            matricNo: student.matricNo,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            examinerId: examinerId,
-          },
-        });
-      })
-    );
-
-    const validCreatedStudents = createdStudents.filter(student => student !== null);
-
-    if (validCreatedStudents.length === 0) {
-      return res.status(400).json({ message: 'No new students were registered' });
-    }
-
-    const studentIds = validCreatedStudents.map(student => student.id);
-
-    // ✅ FIX: Connect students to BOTH exam AND course
-    await Promise.all([
-      // Connect to exam
-      prisma.exam.update({
-        where: { id: parsedExamId },
-        data: {
-          students: {
-            connect: studentIds.map(id => ({ id })),
-          },
-        },
-      }),
-      // Connect to course (THIS WAS MISSING!)
-      prisma.course.update({
-        where: { id: parsedCourseId },
-        data: {
-          students: {
-            connect: studentIds.map(id => ({ id })),
-          },
-        },
-      }),
-    ]);
-
-    res.status(200).json({
-      message: `${validCreatedStudents.length} students registered successfully for both course and exam!`,
-      students: validCreatedStudents,
-      examinerId,
-    });
-  } catch (err) {
-    console.error('Error occurred:', err);
-    console.error('Error stack:', err.stack);
-    res.status(500).json({ message: 'Failed to register students', error: err.message });
-  }
-};
 
 
 

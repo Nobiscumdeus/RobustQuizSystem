@@ -1258,7 +1258,7 @@ exports.updateStudent = async (req, res) => {
   }
 };
 
-
+/*
 exports.getStudentsByExaminer=async(req,res)=>{
   const examinerId=req.user.userId
   try {
@@ -1285,3 +1285,43 @@ exports.getStudentsByExaminer=async(req,res)=>{
   }
 
 }
+  */
+
+exports.getStudentsByExaminer = async (req, res) => {
+  const examinerId = req.user.userId;
+  
+  try {
+    if (!examinerId) {
+      return res.status(400).json({ message: 'Examiner ID is required' });
+    }
+    
+    // Retrieve all students associated with the examiner WITH course enrollment info
+    const students = await prisma.student.findMany({
+      where: {
+        examinerId: parseInt(examinerId),
+      },
+      include: {
+        courseStudents: {
+          include: {
+            course: true // Include course details if needed
+          }
+        },
+        _count: {
+          select: {
+            courseStudents: true // This will give you the count of enrolled courses
+          }
+        }
+      }
+    });
+    
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'No students found for this examiner' });
+    }
+    
+    res.status(200).json({ students });
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to retrieve students. Please try again.' });
+  }
+};

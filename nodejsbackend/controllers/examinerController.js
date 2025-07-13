@@ -716,3 +716,4 @@ class StudentController {
   }
 
 }
+module.exports={ExaminerController,StudentController}
