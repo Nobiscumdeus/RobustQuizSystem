@@ -26,8 +26,28 @@ router.get('/exam/:examId/edit', authenticate,courseController.getExamForEdit);
 router.put('/exam/:examId',authenticate, courseController.updateExam);
 
 // New route for deleting an exam
+router.post('/exam/:examId/students', authenticate, courseController.addStudentToExam);
+router.delete('/exam/:examId/students/:studentId', authenticate, courseController.removeStudentFromExam);
+router.post('/exam/:examId/questions/random', authenticate, courseController.addRandomQuestionsToExam);
 router.delete('/exams/:examId', authenticate, courseController.deleteExam);
 
+
+
+//....................................Newly added routes for getting students on board for exam .............
+router.get('/exam/:examId/eligible-students', authenticate, courseController.getEligibleStudents);
+router.get('/course/:courseId/questions', authenticate, courseController.getCourseQuestions);
+router.post('/exam/:examId/questions', authenticate, courseController.addQuestionToExam);
+router.delete('/exam/:examId/questions/:examQuestionId', authenticate, courseController.removeQuestionFromExam);
+
+
+router.get('/exam/:examId/results', authenticate, courseController.getExamResults);
+router.get('/exam/:examId/question-analytics', authenticate, courseController.getQuestionAnalytics);
+router.get('/exam/:examId/attendances', authenticate, courseController.getExamAttendances);
+
+
+
+//getting course and exams by an examiner route 
+router.get('/courses-exams/examiner/:examinerId',authenticate,courseController.getCoursesAndExamsForRegistration)
 //New route for deleting a course 
 router.delete('/courses/:courseId',authenticate,courseController.deleteCourse);
 //..............................Student routes..............................
@@ -38,66 +58,14 @@ router.get('/student/:studentId/edit',authenticate,courseController.getStudentFo
 router.put('/student/:studentId',authenticate,courseController.updateStudent);
 
 
-/* // New route for uploading bulk questions
-/*
-// Get question bank for examiner
-GET /api/questions/bank
-// Add question to bank
-POST /api/questions/bank
-// Update question in bank
-PUT /api/questions/bank/:id
+router.get('/students/not-in-course/:courseId', authenticate, courseController.getStudentsNotInCourse);
+
+router.post('/courses/:courseId/students', authenticate, courseController.addStudentsToCourse);
+
+router.delete('/courses/:courseId/students/:studentId', authenticate, courseController.removeStudentFromCourse);
 
 
-
-
----------------------------
-
-// Get available questions for exam
-GET /api/exams/:examId/available-questions
-// Add questions to exam
-POST /api/exams/:examId/questions
-// Remove question from exam
-DELETE /api/exams/:examId/questions/:questionId
-
-------------------------------
-
-
-
-
-
-// Publish exam (students can see it)
-POST /api/exams/:examId/publish
-// Activate exam (students can take it)
-POST /api/exams/:examId/activate
-// End exam
-POST /api/exams/:examId/end
-// Get exam status
-GET /api/exams/:examId/status
-
-
-------------------------------
-
-
-
-// Get available exams for student
-GET /api/student/exams
-// Start exam attempt
-POST /api/exams/:examId/start
-// Submit answers
-POST /api/exams/:examId/submit
-// Get exam questions (for active attempt)
-GET /api/exams/:examId/questions
-
-
------------------------------
-
-// Get live exam statistics
-GET /api/exams/:examId/live-stats
-// Get student progress
-GET /api/exams/:examId/student-progress
-
-
-*/
+router.post('/exam/login', courseController.studentLogin);
 
 
 

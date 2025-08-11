@@ -21,7 +21,8 @@ model User {
   updatedAt DateTime  @updatedAt // Automatically updated when the user is modified
   courses   Course[]  @relation("CourseExaminer") // If this user is an examiner, they can have multiple courses
 
-  questionBanks QuestionBank[] // Add this line
+  questions Question[] // A user (examiner) can create multiple questions 
+
   //updated schema
   notifications Notification[] // Add this line
   lastName      String? // Missing from current schema
@@ -73,7 +74,8 @@ model Exam {
   duration   Int // Duration in minutes
   examinerId Int
   examiner   User         @relation(fields: [examinerId], references: [id]) // Relationship to examiner (User)
-  questions  Question[] // One exam can have many questions
+
+  examQuestions ExamQuestion[]
   students   Student[]    @relation("ExamStudents") // Many-to-many relationship with students
   results    ExamResult[] // One exam can have many results (students' results)
   courseId   Int
@@ -109,26 +111,37 @@ model Exam {
 
 model Question {
   id             Int          @id @default(autoincrement())
-  examId         Int
-  exam           Exam         @relation(fields: [examId], references: [id])
-  questionBankId Int
-  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id])
-  order          Int // Question order in exam
-  points         Float        @default(1.0)
+  
+  // Primary relationship: Questions belong to COURSES
+  courseId       Int
+  course         Course ?      @relation(fields: [courseId], references: [id])
+  
+  // Question content
   questionText   String
   questionType   QuestionType
   options        String[]
   correctAnswer  String
   imageUrl       String?
-  category       CategoryType
+  category       CategoryType ?
   tags           String[]
-  difficulty     String
+  difficulty     String ?
+  points         Float        @default(1.0)
+  
+  // Metadata
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  examinerId     Int
+  examiner       User ?        @relation(fields: [examinerId], references: [id])
+  
+  // Exam usage tracking (many-to-many)
+  examQuestions  ExamQuestion[] // Questions can be used in multiple exams
+  
+  // Analytics
+  analytics      QuestionAnalytics[]
   answers        Answer[]
-
-  analytics QuestionAnalytics[] // ✅ back-reference
 }
+
+
 
 enum QuestionType {
   MULTIPLE_CHOICE
@@ -162,6 +175,24 @@ enum CategoryType {
   MUSIC
 }
 
+
+// Junction table for Exam-Question relationship
+model ExamQuestion {
+  id         Int      @id @default(autoincrement())
+  examId     Int
+  exam       Exam     @relation(fields: [examId], references: [id])
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  order      Int      // Order of question in the exam
+  points     Float    @default(1.0) // Points for this question in this exam
+  createdAt  DateTime @default(now())
+  
+  @@unique([examId, questionId]) // Prevent duplicate questions in same exam
+  @@index([examId])
+  @@index([questionId])
+}
+
+
 model Answer {
   id         Int      @id @default(autoincrement())
   content    String // The content of the answer
@@ -173,27 +204,22 @@ model Answer {
 }
 
 model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  code        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // ✅ FIX: explicit many-to-many relationship
-  courseStudents CourseStudent[] // Replace: students Student[]
-
-
-  examiner   User      @relation("CourseExaminer", fields: [examinerId], references: [id])
-  examinerId Int // foreign key to the User (examiner)
-  students   Student[] // Many-to-many relation with students
-  exams      Exam[] // One-to-many relation with exams
-
-  //Updated schema 
-  creditHours  Int? // Course credit units
-  semester     String? // e.g., "First Semester 2023"
-  isActive     Boolean @default(true)
-  thumbnailUrl String? // Course image/thumbnail
+  id             Int                @id @default(autoincrement())
+  title          String
+  code           String
+  description    String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  courseStudents CourseStudent[]
+  examiner       User               @relation("CourseExaminer", fields: [examinerId], references: [id])
+  examinerId     Int
+  students       Student[]
+  exams          Exam[]
+  questions      Question[]         // 🆕 Add this line
+  creditHours    Int?
+  semester       String?
+  isActive       Boolean            @default(true)
+  thumbnailUrl   String?
 
   @@index([title])
   @@index([code])
@@ -261,24 +287,6 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   type      String // "info", "warning", "alert"
-}
-
-// Add QuestionBank model
-model QuestionBank {
-  id            Int          @id @default(autoincrement())
-  questionText  String
-  questionType  QuestionType
-  options       String[]
-  correctAnswer String
-  imageUrl      String?
-  category      CategoryType
-  tags          String[]
-  difficulty    String
-  examinerId    Int
-  examiner      User         @relation(fields: [examinerId], references: [id])
-  questions     Question[] // Add opposite relation
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
 }
 
 // Added exam session tracking

@@ -9,7 +9,7 @@ const ExamCreation = () => {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [password, setPassword] = useState("");
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(null);
   const [examinerId, setExaminerId] = useState("");
   const [courseId, setCourseId] = useState(""); // Initialize as empty string for required field
   const [courses, setCourses] = useState([]); // Ensure it's an array by default
@@ -38,7 +38,7 @@ const ExamCreation = () => {
         setExaminerId(decodedToken.userId);
       } catch (err) {
         console.error("Error decoding the token:", err);
-       // setError("Failed to decode the token");
+       
         toast.error("Failed to decode the token")
       }
     }
@@ -116,7 +116,7 @@ const handleSubmit = async (e) => {
       title: title.trim(),
       date: new Date(date).toISOString(),
       password,
-      duration: Number(duration) || 0,
+      duration: Number(duration) || null,
       examinerId: Number(examinerId) || 0,
       courseId: formattedCourseId,
       
@@ -160,7 +160,7 @@ const handleSubmit = async (e) => {
       setTitle("");
       setDate("");
       setPassword("");
-      setDuration(0);
+      setDuration(null);
       setCourseId("");
       setDescription("");
       setInstructions("");
@@ -278,7 +278,13 @@ const handleSubmit = async (e) => {
             type="number"
             id="duration"
             value={duration}
-            onChange={(e) => setDuration(Number(e.target.value) || 9)} // Ensure it's a number
+            /*
+            onChange={(e) => setDuration(Number(e.target.value) )} // Ensure it's a number
+            */
+            onChange={(e) => {
+    const value = e.target.value;
+    setDuration(value === "" ? null : Number(value)); // Convert to number or null
+  }}
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Duration in minutes"
             required

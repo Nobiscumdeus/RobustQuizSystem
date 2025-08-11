@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';  // Using jwt-decode correctly for decoding JWT
 import { toast } from 'react-toastify';
-import { isAuthenticated } from '../../../utility/auth';
-import { useNavigate, useLocation } from 'react-router-dom';
+
+
 
 
 const CreateCourse = () => {
@@ -14,27 +14,7 @@ const CreateCourse = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-    const navigate = useNavigate();
-    const location=useLocation();
-    /*
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { from: "/admin_panel" },
-        replace: true,
-      });
-    }
-  }, [navigate]);
-  */
-  useEffect(() => {
-     if (!isAuthenticated()) {
-       navigate("/login", {
-       //  state: { from: "/admin_panel" },
-       state:{from:location.pathname,message:'Session expired, please login to continue'},
-         replace: true,
-       });
-     }
-   }, [navigate,location]);
+
 
 
   // Get examinerId from the JWT token when the component mounts

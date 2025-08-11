@@ -26,6 +26,7 @@ export default store; // Default export for the store
 
 
 import { configureStore } from "@reduxjs/toolkit";
+
 import authReducer from './features/ChasfatAcademy/auth/authSlice';
 import examReducer from './features/ChasfatAcademy/exam/examSlice';
 import questionReducer from './features/ChasfatAcademy/question/questionSlice';
@@ -35,6 +36,8 @@ import darkModeReducer from './features/ChasfatAcademy/darkmode/darkModeSlice';
 import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice'
 // Importing an API slice created using RTK Query (Redux Toolkit's data-fetching tool).
 import { examApi } from './api/examApis'
+
+
 
 
 export const store =configureStore({
@@ -57,6 +60,8 @@ export const store =configureStore({
     }).concat(examApi.middleware),
      
 })
+
+
 
 
 export default store

@@ -21,7 +21,7 @@ import TrialQuizDemo from "./components/ChasfatAcademy/pages/TrialQuizDemoEnhanc
 import StudentRegistration from "./components/ChasfatAcademy/pages/StudentRegistration";
 import ImageUploadQuestion from "./components/ChasfatAcademy/pages/ImageUploadQuestion";
 
-import CreateExam from "./components/ChasfatAcademy/pages/admin/exams/CreateExam";
+
 import ExamCreation from "./components/ChasfatAcademy/pages/admin/exams/ExamCreation";
 //import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
 import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
@@ -56,7 +56,12 @@ import Reports from "./components/ChasfatAcademy/pages/Reports";
 
 import AuthWrapper from "./components/ChasfatAcademy/pages/AuthWrapper";
 
+import StudentExamLogin from "./components/ChasfatAcademy/pages/StudentExamLogin";
+
+import PersonalizedExamInterface from "./components/ChasfatAcademy/pages/PersonalizedExamInterface";
 //toastify package
+
+import DynamicExamInterface from "./components/ChasfatAcademy/pages/PersonalExamInterface";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -126,6 +131,9 @@ function RoutesWrapper() {
       <Route path="/course" element={<CreateCourse />} />
       <Route path="/exam" element={<ExamCreation />} />
       <Route path="/profile" element={<UserProfile />} />
+      <Route path="/student_exam_login" element={<StudentExamLogin />} />
+      <Route path="/personalized_exam_interface" element={<PersonalizedExamInterface />} />
+      <Route path="/dynamic_exam_interface" element={<DynamicExamInterface />} />
      
       <Route path="/admin_panel" element={<AdminPanel />} />
       {/* Protected Pages */}
@@ -133,12 +141,12 @@ function RoutesWrapper() {
       <Route path="/welcome" element={<Onboarding />} />
       <Route path="/quiz_demo" element={<TrialQuizDemo />} />
       <Route path="/image_upload" element={<ImageUploadQuestion />} />
-      <Route path="/create_exam" element={<CreateExam />} />
+   
       <Route path="/create_question" element={<CreateQuestionForm />} />
       <Route path="/calculator" element={<CalculatorModal />} />
       <Route path="/exam/:examId" element={<ViewExamPage />} />
       <Route path="/exam/:examId/edit" element={<EditExamPage />} />
-      <Route path="/courses /:courseId" element={<ViewCoursePage />} />
+      <Route path="/courses/:courseId" element={<ViewCoursePage />} />
       <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
       <Route path="/student/:studentId" element={<ViewStudentPage />} />
       <Route path="/student/:studentId/edit" element={<EditStudentPage />} />

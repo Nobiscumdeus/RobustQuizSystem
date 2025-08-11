@@ -11,7 +11,10 @@ const router = express.Router();
 router.post('/questions', upload.single('image'), questionController.createQuestion);
 
 // Get all questions for an exam
-router.get('/questions/:examId', questionController.getQuestionsByExam);
+//router.get('/questions/:examId', questionController.getQuestionsByExam);
 
+router.get('/questions/:examId',questionController.getCourseQuestions)
+// In your questionAnswerRoutes.js
+router.get('/courses/:courseId/questions', questionController.getCourseQuestions);
 
 module.exports = router;
