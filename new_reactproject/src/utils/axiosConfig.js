@@ -1,11 +1,26 @@
 import axios from 'axios';
 
-//const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-const API_BASE_URL = '/api';
+import { logout } from '../components/ChasfatAcademy/utility/auth';
+// Define student-specific endpoints
+const studentEndpoints = [
+  '/exam/login',
+  '/exam/:id/start',
+  '/exam/:id/session',
+  '/exam/:id/questions',
+  '/exam/session/:sessionId/answer',
+  '/exam/session/:sessionId/answers/batch',
+  '/exam/session/:sessionId/submit',
+  '/exam/session/:sessionId/auto-submit',
+  '/exam/session/:sessionId/time',
+  '/exam/session/:sessionId/heartbeat',
+  '/exam/session/:sessionId/violation',
+  '/exam/session/:sessionId/answers',
+  '/exam/session/:sessionId/violations'
+];
 
 // Create axios instance
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -15,9 +30,18 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const studentToken = localStorage.getItem('studentToken');
+    const userToken = localStorage.getItem('token');
+    // Check if the URL matches a student endpoint
+    const isStudentRoute = studentEndpoints.some(endpoint => {
+      const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
+      return regex.test(config.url);
+    });
+
+    if (studentToken && isStudentRoute) {
+      config.headers.Authorization = `Bearer ${studentToken}`;
+    } else if (userToken) {
+      config.headers.Authorization = `Bearer ${userToken}`;
     }
     return config;
   },
@@ -29,10 +53,20 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      const isStudentRoute = studentEndpoints.some(endpoint => {
+        const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
+        return regex.test(error.config.url);
+      });
+      if (isStudentRoute) {
+        localStorage.removeItem('studentToken');
+        window.location.href = '/student/login';
+      } else {
+        localStorage.removeItem('token');
+        logout(true);
+      }
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }

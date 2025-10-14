@@ -69,8 +69,8 @@ const RegistrationForm = () => {
     <>
       <div
         className={`w-full  flex flex-col items-center justify-center min-h-screen  ${
-          darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-700"
-        }`}
+            darkMode ? "bg-gradient-to-br from-gray-800 via-blue-900 to-gray-900" : "bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600"
+          }`}
       >
         <motion.div
         initial={{opacity:0,x:100}}

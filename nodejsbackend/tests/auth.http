@@ -1,0 +1,34 @@
+@baseUrl = http://localhost:3000/api
+@token = your_jwt_token_here
+
+### Auth Tests
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "examiner@test.com",
+  "password": "password123"
+}
+
+### Course Tests
+POST {{baseUrl}}/examiner/courses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Biology 101",
+  "description": "Basic Biology"
+}
+
+###
+GET {{baseUrl}}/examiner/courses
+Authorization: Bearer {{token}}
+
+### Student Tests
+POST {{baseUrl}}/student/login
+Content-Type: application/json
+
+{
+  "studentId": "STU001",
+  "examCode": "EXAM2024A"
+}

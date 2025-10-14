@@ -610,6 +610,48 @@ const ViewExamPage = () => {
                       )}
                     </div>
                   </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                   {examQuestion.question.options?.length > 0 && (
                     <div className="mt-2 ml-4">
                       <p className="text-sm text-gray-600 mb-1">Options:</p>
@@ -627,6 +669,12 @@ const ViewExamPage = () => {
                       </ul>
                     </div>
                   )}
+
+
+
+
+
+
                 </div>
               ))
             ) : (

@@ -6,11 +6,12 @@ import { useSelector } from "react-redux";
 import Footer from "../../shared/Footer";
 import ScrollDownIcon from "../../utility/ScrollDownIcon";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { setLoggedIn } from "../../utility/auth";
 
 import { toast } from "react-toastify";
 // Animation variants for entrance and exit
+/*
 const containerVariants = {
   hidden: {
     opacity: 0,
@@ -34,12 +35,39 @@ const containerVariants = {
     },
   },
 };
+*/
+// Replace containerVariants with:
+const containerVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20, // Small upward movement instead of just opacity
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      duration: 0.6,
+      bounce: 0.3,
+      // Remove delay, staggerChildren, and when
+    },
+  },
+  exit: {
+    x: "-50vw",
+    opacity: 0,
+    transition: {
+      ease: "easeInOut",
+      duration: 0.8, // Slightly faster exit
+    },
+  },
+};
+
+
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const location=useLocation();
- // const location = useLocation();
-  //const { from = "/admin_panel", message } = location.state || {};
+
 
   const darkMode = useSelector((state) => state.darkMode.darkMode);
   // const [serverError, setServerError] = useState('');
@@ -58,33 +86,7 @@ const LoginForm = () => {
    setLoggedIn();
     };
 
-  //Show toast message when component mounts (If there's a message)
-  /*
-  useEffect(()=>{
-    if(message){
-      //Determine toast type based on message content 
-      if(message.includes("Session expired")){
-        toast.warn(message,{
-          position:"top-left",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        })
-      }else{
-        toast.info(message,{
-          position:"top-right",
-          autoClose:"5000",
-           hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        })
-      }
-    }
-  },[message])
-  */
+
 
   // Validation schema using Yup
   const validationSchema = Yup.object().shape({
@@ -93,17 +95,7 @@ const LoginForm = () => {
       .required("Email is required"),
     password: Yup.string().required("Password is required"),
   });
-  /*
-    // Auto-dismiss server error after 5 seconds
-    useEffect(() => {
-        if (serverError) {
-            const timer = setTimeout(() => {
-                setServerError('');
-            }, 5000); // Clear error after 5 seconds
-            return () => clearTimeout(timer);
-        }
-    }, [serverError]);
-*/ //We are trying to use toast error in the place of this as of now
+
   const handleSubmit = async (values, { resetForm }) => {
     setIsSubmitting(true); // Start loading
     try {
@@ -130,18 +122,24 @@ const LoginForm = () => {
 
   return (
     <>
-      <AnimatePresence>
-        <motion.div
-          key="login-form" // Unique key for AnimatePresence
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+      
+        <div
+         
           className={`w-full flex flex-col items-center justify-center min-h-screen ${
-            darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100"
+            darkMode ? "bg-gradient-to-br from-gray-800 via-blue-900 to-gray-900" : "bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600"
           }`}
+
+         
         >
-          <div
+          <motion.div
+           key="login-form" // Unique key for AnimatePresence
+          initial={{opacity:0,x:100}}
+        animate={{opacity:1,x:0}}
+        type={{ type:'inertia',delay:0.5}}
+          variants={containerVariants}
+      
+          exit="exit"
+         
             className={`${
               darkMode ? "bg-gray-800 text-gray-100" : "bg-white text-gray-800"
             } shadow-lg rounded-lg p-8 max-w-md w-full`}
@@ -157,18 +155,7 @@ const LoginForm = () => {
               </div>
             )}
 
-            
           
-            
-
-            {/* Display server error message */}
-            {/*}
-                        {serverError && (
-                            <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
-                                {serverError}
-                            </div>
-                        )}
-                            */}
 
             <Formik
               initialValues={{ email: "", password: "" }}
@@ -233,9 +220,9 @@ const LoginForm = () => {
                 Register here
               </Link>
             </p>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </div>
+      
 
       <ScrollDownIcon />
       <Footer />

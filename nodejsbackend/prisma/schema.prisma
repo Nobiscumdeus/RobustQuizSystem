@@ -47,9 +47,8 @@ model Student {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-   // ✅ FIX: explicit many-to-many relationship
+  // ✅ FIX: explicit many-to-many relationship
   courseStudents CourseStudent[] // Replace: courses Course[]
-
 
   //updated schema 
   attendances  Attendance[] // Add this line
@@ -67,21 +66,21 @@ model Student {
 }
 
 model Exam {
-  id         Int          @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   title      String
   date       DateTime
   password   String
   duration   Int // Duration in minutes
   examinerId Int
-  examiner   User         @relation(fields: [examinerId], references: [id]) // Relationship to examiner (User)
+  examiner   User     @relation(fields: [examinerId], references: [id]) // Relationship to examiner (User)
 
   examQuestions ExamQuestion[]
-  students   Student[]    @relation("ExamStudents") // Many-to-many relationship with students
-  results    ExamResult[] // One exam can have many results (students' results)
-  courseId   Int
-  course     Course       @relation(fields: [courseId], references: [id]) // Relationship to the Course
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  students      Student[]      @relation("ExamStudents") // Many-to-many relationship with students
+  results       ExamResult[] // One exam can have many results (students' results)
+  courseId      Int
+  course        Course         @relation(fields: [courseId], references: [id]) // Relationship to the Course
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   examSessions      ExamSession[] // ✅ back-reference
   questionAnalytics QuestionAnalytics[] // ✅ back-reference
@@ -110,38 +109,38 @@ model Exam {
 }
 
 model Question {
-  id             Int          @id @default(autoincrement())
-  
+  id Int @id @default(autoincrement())
+
   // Primary relationship: Questions belong to COURSES
-  courseId       Int
-  course         Course ?      @relation(fields: [courseId], references: [id])
-  
+  courseId Int
+  course   Course? @relation(fields: [courseId], references: [id])
+
   // Question content
-  questionText   String
-  questionType   QuestionType
-  options        String[]
-  correctAnswer  String
-  imageUrl       String?
-  category       CategoryType ?
-  tags           String[]
-  difficulty     String ?
-  points         Float        @default(1.0)
-  
+  questionText  String
+  questionType  QuestionType
+  options       String[]
+  correctAnswer String
+  imageUrl      String?
+  category      CategoryType?
+  tags          String[]
+  difficulty    String?
+  points        Float         @default(1.0)
+
   // Metadata
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  examinerId     Int
-  examiner       User ?        @relation(fields: [examinerId], references: [id])
-  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  examinerId Int
+  examiner   User?    @relation(fields: [examinerId], references: [id])
+
   // Exam usage tracking (many-to-many)
-  examQuestions  ExamQuestion[] // Questions can be used in multiple exams
-  
+  examQuestions ExamQuestion[] // Questions can be used in multiple exams
+
   // Analytics
-  analytics      QuestionAnalytics[]
-  answers        Answer[]
+  analytics QuestionAnalytics[]
+  answers   Answer[]
+
+  studentAnswers StudentAnswer[]
 }
-
-
 
 enum QuestionType {
   MULTIPLE_CHOICE
@@ -175,7 +174,6 @@ enum CategoryType {
   MUSIC
 }
 
-
 // Junction table for Exam-Question relationship
 model ExamQuestion {
   id         Int      @id @default(autoincrement())
@@ -183,15 +181,14 @@ model ExamQuestion {
   exam       Exam     @relation(fields: [examId], references: [id])
   questionId Int
   question   Question @relation(fields: [questionId], references: [id])
-  order      Int      // Order of question in the exam
+  order      Int // Order of question in the exam
   points     Float    @default(1.0) // Points for this question in this exam
   createdAt  DateTime @default(now())
-  
+
   @@unique([examId, questionId]) // Prevent duplicate questions in same exam
   @@index([examId])
   @@index([questionId])
 }
-
 
 model Answer {
   id         Int      @id @default(autoincrement())
@@ -203,22 +200,37 @@ model Answer {
   updatedAt  DateTime @updatedAt
 }
 
+model StudentAnswer {
+  id              Int        @id @default(autoincrement())
+  examResultId    Int
+  examResult      ExamResult @relation(fields: [examResultId], references: [id])
+  questionId      Int
+  question        Question   @relation(fields: [questionId], references: [id])
+  studentResponse String // Student's actual answer
+  isCorrect       Boolean?
+  timeSpent       Int? // Time spent on this question
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([examResultId, questionId]) // One answer per question per exam attempt
+}
+
 model Course {
-  id             Int                @id @default(autoincrement())
+  id             Int             @id @default(autoincrement())
   title          String
   code           String
   description    String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   courseStudents CourseStudent[]
-  examiner       User               @relation("CourseExaminer", fields: [examinerId], references: [id])
+  examiner       User            @relation("CourseExaminer", fields: [examinerId], references: [id])
   examinerId     Int
   students       Student[]
   exams          Exam[]
-  questions      Question[]         // 🆕 Add this line
+  questions      Question[] // 🆕 Add this line
   creditHours    Int?
   semester       String?
-  isActive       Boolean            @default(true)
+  isActive       Boolean         @default(true)
   thumbnailUrl   String?
 
   @@index([title])
@@ -245,6 +257,7 @@ model ExamResult {
   ipAddress      String? // For security logging
   deviceInfo     String? // Device used for exam
   answers        Json? // Store student's answer data
+  studentAnswers StudentAnswer[]
 
   @@unique([studentId, examId]) // Ensure one result per student per exam
 }
@@ -321,15 +334,13 @@ model QuestionAnalytics {
   @@unique([questionId, examId])
 }
 
-
-
 // ✅ ADD: Explicit join table for Course-Student relationship
 model CourseStudent {
-  id        Int      @id @default(autoincrement())
-  courseId  Int
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  studentId Int
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  courseId   Int
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId  Int
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   enrolledAt DateTime @default(now())
 
   @@unique([courseId, studentId]) // Prevent duplicate enrollments

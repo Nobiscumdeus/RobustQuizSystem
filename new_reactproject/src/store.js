@@ -1,67 +1,93 @@
-// store.js
 /*
-import { configureStore } from "@reduxjs/toolkit";
-import todosReducer from './features/todos/todosSlice';
-import filtersReducer from './features/filters/filtersSlice';
-import timerReducer from './features/ChasfatAcademy/timer/timerSlice';
-import darkModeReducer from './features/ChasfatAcademy/darkmode/darkModeSlice';
-import quizReducer from './features/ChasfatAcademy/quiz/quizSlice'; 
-import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice';
-
-// Configure the Redux store
-const store = configureStore({
-  reducer: {
-
-    todos: todosReducer, 
-    filters: filtersReducer,
-    quiz: quizReducer,
-    timer: timerReducer,
-    darkMode: darkModeReducer, // Ensure darkModeReducer is added to the store
-    trial_quiz:trial_quizReducer,
-  },
-});
-
-export default store; // Default export for the store
-*/
-
-
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore } from '@reduxjs/toolkit';
+import { persistStore, persistReducer } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 
 import authReducer from './features/ChasfatAcademy/auth/authSlice';
-import examReducer from './features/ChasfatAcademy/exam/examSlice';
+import studentAuthReducer from './features/ChasfatAcademy/auth/studentAuthSlice';
+import examinationReducer from './features/ChasfatAcademy/exam/examinationSlice';
 import questionReducer from './features/ChasfatAcademy/question/questionSlice';
 import timerReducer from './features/ChasfatAcademy/timer/timerSlice';
 import resultReducer from './features/ChasfatAcademy/result/resultSlice';
 import darkModeReducer from './features/ChasfatAcademy/darkmode/darkModeSlice';
-import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice'
-// Importing an API slice created using RTK Query (Redux Toolkit's data-fetching tool).
-import { examApi } from './api/examApis'
+import trial_quizReducer from './features/ChasfatAcademy/trial_quiz/trial_quizSlice';
 
+// Persist only studentAuth
+const studentAuthPersistConfig = {
+  key: 'studentAuth',
+  storage,
+};
 
-
-
-export const store =configureStore({
-  reducer:{
-    auth:authReducer,
-    exam:examReducer,
-    questions:questionReducer,
-    timer:timerReducer,
-    results:resultReducer,
-    trial_quiz:trial_quizReducer,
-      darkMode: darkModeReducer,  // ✅ Add this back
-    //RTK Api reducer 
-    [examApi.reducerPath] : examApi.reducer
+const store = configureStore({
+  reducer: {
+    studentAuth: persistReducer(studentAuthPersistConfig, studentAuthReducer),
+    auth: authReducer,
+    questions: questionReducer,
+    examination: examinationReducer,
+    timer: timerReducer,
+    results: resultReducer,
+    trial_quiz: trial_quizReducer,
+    darkMode: darkModeReducer,
   },
-  middleware:(getDefaultMiddleware)=>
+  middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck:{
-        ignoredActions:['persist/PERSIST','persist/REHYDRATE']
-      }
-    }).concat(examApi.middleware),
-     
-})
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }),
+});
+
+export const persistor = persistStore(store);
 
 
+export default store;
 
+*/
+import { configureStore } from "@reduxjs/toolkit";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 
-export default store
+// Feature slices
+import authReducer from "./features/ChasfatAcademy/auth/authSlice";
+import studentAuthReducer from "./features/ChasfatAcademy/auth/studentAuthSlice";
+import examinationReducer from "./features/ChasfatAcademy/exam/examinationSlice";
+import questionReducer from "./features/ChasfatAcademy/question/questionSlice";
+import timerReducer from "./features/ChasfatAcademy/timer/timerSlice";
+import resultReducer from "./features/ChasfatAcademy/result/resultSlice";
+import darkModeReducer from "./features/ChasfatAcademy/darkmode/darkModeSlice";
+import trial_quizReducer from "./features/ChasfatAcademy/trial_quiz/trial_quizSlice";
+
+// RTK Query API
+
+import { examinationApi } from "./api/examinationApi";
+// Persist only studentAuth safe fields
+const studentAuthPersistConfig = {
+  key: "studentAuth",
+  storage,
+  whitelist: ["student", "availableExams"], // ✅ no token
+};
+
+const store = configureStore({
+  reducer: {
+    studentAuth: persistReducer(studentAuthPersistConfig, studentAuthReducer),
+    auth: authReducer,
+    questions: questionReducer,
+    examination: examinationReducer,
+    timer: timerReducer,
+    results: resultReducer,
+    trial_quiz: trial_quizReducer,
+    darkMode: darkModeReducer,
+
+    // ✅ Register RTK Query reducer
+    [examinationApi.reducerPath]: examinationApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+      },
+    }).concat(examinationApi.middleware), // ✅ Add RTK Query middleware
+});
+
+export const persistor = persistStore(store);
+export default store;

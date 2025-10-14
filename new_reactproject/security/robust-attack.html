@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Vulnerabilities Demo</title>
+    <style>
+        .vulnerable { border: 2px solid red; padding: 10px; margin: 10px; }
+        .secure { border: 2px solid green; padding: 10px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Security Vulnerability Demonstrations</h1>
+    
+    <div class="vulnerable">
+        <h2>XSS Attack Demo</h2>
+        <button onclick="stealLocalStorage()">Steal localStorage Tokens</button>
+        <button onclick="tryStealCookies()">Try to Steal HTTP-Only Cookies</button>
+        <div id="xssResults"></div>
+    </div>
+    
+    <div class="vulnerable">
+        <h2>CSRF Attack Demo</h2>
+        <button onclick="launchCSRFAttack()">Launch CSRF Attack</button>
+        <div id="csrfResults"></div>
+    </div>
+    
+    <div class="secure">
+        <h2>Security Measures</h2>
+        <button onclick="testHTTPOnlyCookies()">Test HTTP-Only Cookie Security</button>
+        <button onclick="testSameSiteCookies()">Test SameSite Protection</button>
+        <div id="securityResults"></div>
+    </div>
+
+    <script>
+        // XSS Attacks
+        function stealLocalStorage() {
+            const token = localStorage.getItem('studentToken');
+            document.getElementById('xssResults').innerHTML = `
+                <p style="color: red;">✅ SUCCESS: Stole token: ${token}</p>
+                <p><strong>Vulnerability:</strong> localStorage accessible to JavaScript</p>
+            `;
+        }
+        
+        function tryStealCookies() {
+            const cookies = document.cookie;
+            document.getElementById('xssResults').innerHTML = `
+                <p style="color: green;">❌ FAILED: Cannot access HTTP-Only cookies</p>
+                <p>Regular cookies: ${cookies || 'None'}</p>
+                <p><strong>Protection:</strong> HTTP-Only flag prevents access</p>
+            `;
+        }
+        
+        // CSRF Attack Simulation
+        function launchCSRFAttack() {
+            fetch('http://localhost:5000/api/vulnerable-action', {
+                method: 'POST',
+                credentials: 'include' // Send cookies
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('csrfResults').innerHTML = `
+                    <p style="color: red;">✅ CSRF SUCCESS: ${data.message}</p>
+                    <p><strong>Vulnerability:</strong> Cookies sent automatically</p>
+                `;
+            })
+            .catch(err => {
+                document.getElementById('csrfResults').innerHTML = `
+                    <p style="color: green;">❌ CSRF BLOCKED: ${err.message}</p>
+                `;
+            });
+        }
+        
+        // Security Tests
+        function testHTTPOnlyCookies() {
+            // Try to read various storage methods
+            const results = {
+                localStorage: !!localStorage.getItem('studentToken'),
+                sessionStorage: !!sessionStorage.getItem('studentToken'),
+                cookies: document.cookie.length > 0,
+                httpOnlyCookies: 'Cannot be accessed by JavaScript'
+            };
+            
+            document.getElementById('securityResults').innerHTML = `
+                <h3>Storage Accessibility Results:</h3>
+                <pre>${JSON.stringify(results, null, 2)}</pre>
+            `;
+        }
+    </script>
+</body>
+</html>

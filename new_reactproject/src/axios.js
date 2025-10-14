@@ -1,104 +1,72 @@
+
+
 import axios from 'axios';
 import { logout } from './components/ChasfatAcademy/utility/auth';
 
+// Define student-specific endpoints
+const studentEndpoints = [
+  '/exam/login',
+  '/exam/:id/start',
+  '/exam/:id/session',
+  '/exam/:id/questions',
+  '/exam/session/:sessionId/answer',
+  '/exam/session/:sessionId/answers/batch',
+  '/exam/session/:sessionId/submit',
+  '/exam/session/:sessionId/auto-submit',
+  '/exam/session/:sessionId/time',
+  '/exam/session/:sessionId/heartbeat',
+  '/exam/session/:sessionId/violation',
+  '/exam/session/:sessionId/answers',
+  '/exam/session/:sessionId/violations',
+
+   '/api/student/session/:sessionId/start',
+   '/api/exam/validate-access',
+   '/api/auth/student/login',
+   '/student/session/:sessionId/start'  // Without /api prefix too
+];
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:5000',
 });
 
-
-// 1. Inject token into requests
 axiosInstance.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+
+  const studentToken = localStorage.getItem('studentToken');
+  
+  const userToken = localStorage.getItem('token');
+  // Check if the URL matches a student endpoint (using regex for dynamic params)
+  const isStudentRoute = studentEndpoints.some(endpoint => {
+    const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
+    return regex.test(config.url);
+  });
+  if (studentToken && isStudentRoute) {
+    config.headers.Authorization = `Bearer ${studentToken}`;
+  } else if (userToken) {
+    config.headers.Authorization = `Bearer ${userToken}`;
   }
   return config;
 });
 
-// 2. Handle expired tokens
-/*
 axiosInstance.interceptors.response.use(
   response => response,
   async error => {
-    const originalRequest = error.config;
-
-    // If token expired (401) and we haven't already retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        // Attempt to refresh token
-        const refreshToken = localStorage.getItem('refreshToken');
-        const response = await axios.post('/refresh', { refreshToken });
-        
-        // Update stored tokens
-        //localStorage.setItem('token', response.data.accessToken);
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-        
-        // Retry original request with new token
-       // originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
-       originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed - nuclear option
-        localStorage.clear();
-        window.location.href = '/login?expired=true';
-        return Promise.reject(refreshError);
-      }
-    }
-    
-    return Promise.reject(error);
-  }
-);]axiosInstance.interceptors.response.use(
-  response=>response,
-  async error=>{
-    const originalRequest =error.config;
-    //Token expired 
-    if(error.response?.status === 401 && !originalRequest._retry){
-      originalRequest._retry=true
-      try{
-        //Attempt token refresh 
-        const refreshToken=localStorage.getItem('refreshToken');
-        const { data }=await axios.post('/refresh',{refreshToken})
-
-        //Update tokens 
-        localStorage.setItem('token',data.token);
-        localStorage.setItem('refreshToken',data.refreshToken);
-
-        //Retry original request 
-        return axiosInstance(originalRequest);
-
-      }catch(refreshError){
-        //Refresh failed , force logout
-        logout()
-        router.push('/login?session_expired=true&from=' + encodeURIComponent(window.location.pathname));
-        //const navigate=useNavigate()
-        //router.push('/login?session_expired=true')
-        return Promise.reject(refreshError);
-
-      }
-    }
-    return Promise.reject(error);
-  }
-)
-*/
-
-
-
-axiosInstance.interceptors.response.use(
-  response => response,
-  async error => {
-      if (error.response?.status === 401) {
-          // Immediately logout on any 401
-          logout(true); // true indicates expired session
-          return Promise.reject(error);
+    if (error.response?.status === 401) {
+      const isStudentRoute = studentEndpoints.some(endpoint => {
+        const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
+        return regex.test(error.config.url);
+      });
+      if (isStudentRoute) {
+        localStorage.removeItem('studentToken');
+        window.location.href = '/student_exam_login';
+      } else {
+        localStorage.removeItem('token');
+        logout(true); // For user/examiner routes
       }
       return Promise.reject(error);
+    }
+    return Promise.reject(error);
   }
 );
 
-
-
 export default axiosInstance;
+

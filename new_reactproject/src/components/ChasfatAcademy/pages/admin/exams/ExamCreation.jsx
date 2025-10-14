@@ -3,6 +3,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode"; // Correctly use named import
 import ScrollDownIcon from "../../../utility/ScrollDownIcon";
 import {toast} from 'react-toastify'
+import { Link } from "react-router-dom";
 
 
 const ExamCreation = () => {
@@ -214,6 +215,8 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="mt-10 max-w-3xl mx-auto p-8 rounded-lg shadow-lg">
+            <Link to="/admin_panel" className="text-blue-600 hover:underline mb-6 inline-block">Back to Home</Link>
+            
       <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">
         Create a New Exam
       </h2>

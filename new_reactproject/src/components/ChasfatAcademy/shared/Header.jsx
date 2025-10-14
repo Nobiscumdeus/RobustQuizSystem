@@ -131,7 +131,7 @@ const Header = () => {
                 className="cursor-pointer flex items-center"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               >
-                {darkMode ? <FaSun size={24} className="bg-gray-900 text-white" /> : <FaMoon size={24} className="bg-gray-100 text-gray-900" />}
+                {darkMode ? <FaSun size={24} className="bg-gray-900 text-white" /> : <FaMoon size={24} className="bg-transparent text-gray-900" />}
               </a>
             </li>
           </ul>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';  // Using jwt-decode correctly for decoding JWT
 import { toast } from 'react-toastify';
-
+import { Link } from 'react-router-dom';
 
 
 
@@ -80,6 +80,7 @@ const CreateCourse = () => {
   return (
     <div className="max-w-3xl mx-auto p-8 mt-10 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">Create a New Course</h2>
+      <Link to="/admin_panel" className="text-blue-600 hover:underline mb-6 inline-block">Back to Courses</Link>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="title" className="mb-3 block text-sm font-medium text-gray-700">Course Title</label>

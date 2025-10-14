@@ -1,3 +1,5 @@
+//import ErrorBoundary from "./ErrorBoundary";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -5,6 +7,10 @@ import {
   useLocation,
 } from "react-router-dom";
 
+// Redux imports
+import { Provider } from 'react-redux';
+//import { store } from './store'; // Adjust the path based on where you create your store
+import store from './store';
 
 import Header from "./components/ChasfatAcademy/shared/Header";
 import Home from "./components/ChasfatAcademy/Home";
@@ -17,51 +23,31 @@ import LoginForm from "./components/ChasfatAcademy/pages/auth/LoginForm";
 import Manage from "./components/ChasfatAcademy/pages/Manage";
 import TrialQuizDemo from "./components/ChasfatAcademy/pages/TrialQuizDemoEnhanced";
 
-
 import StudentRegistration from "./components/ChasfatAcademy/pages/StudentRegistration";
 import ImageUploadQuestion from "./components/ChasfatAcademy/pages/ImageUploadQuestion";
 
-
 import ExamCreation from "./components/ChasfatAcademy/pages/admin/exams/ExamCreation";
-//import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
 import UserProfile from "./components/ChasfatAcademy/pages/UserProfile";
 
-
 import RegisterStudentsForm from "./components/ChasfatAcademy/pages/admin/registration/RegisterStudentsForm";
-
 import CreateCourse from "./components/ChasfatAcademy/pages/admin/courses/CreateCourse";
-
 import CreateQuestionForm from "./components/ChasfatAcademy/pages/admin/questions/CreateQuestionForm";
 import { AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import AdminPanel from "./components/ChasfatAcademy/pages/AdminPanel";
-
 import CalculatorModal from "./components/ChasfatAcademy/utility/CalculatorModal";
-
 import ViewExamPage from "./components/ChasfatAcademy/pages/admin/exams/ViewExamPage";
-
 import EditExamPage from "./components/ChasfatAcademy/pages/admin/exams/EditExamPage";
-
 import EditCoursePage from "./components/ChasfatAcademy/pages/admin/courses/EditCoursePage";
-
 import ViewCoursePage from "./components/ChasfatAcademy/pages/admin/courses/ViewCoursePage";
-
-
-
 import EditStudentPage from "./components/ChasfatAcademy/pages/admin/students/EditStudentPage";
-
 import ViewStudentPage from "./components/ChasfatAcademy/pages/admin/students/ViewStudentPage";
-
 import Reports from "./components/ChasfatAcademy/pages/Reports";
-
 import AuthWrapper from "./components/ChasfatAcademy/pages/AuthWrapper";
-
 import StudentExamLogin from "./components/ChasfatAcademy/pages/StudentExamLogin";
-
 import PersonalizedExamInterface from "./components/ChasfatAcademy/pages/PersonalizedExamInterface";
-//toastify package
 
-import DynamicExamInterface from "./components/ChasfatAcademy/pages/PersonalExamInterface";
+//import DynamicExamInterface from "../quarantine/PersonalExamInterface";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -79,44 +65,51 @@ function App() {
   const toggleDarkMode = () => {
     setDarkMode((prevMode) => {
       const newMode = !prevMode;
-      localStorage.setItem("darkMode", newMode); // Save dark mode state to localStorage
+      localStorage.setItem("darkMode", newMode);
       return newMode;
     });
   };
 
   return (
-    <div
-      className={`min-h-screen w-full antialiased ${darkMode ? "dark" : ""}`}
-    >
-      <Router>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme={darkMode ? "dark" : "light"} // Optional: match dark mode
-        />
+    
+    <Provider store={store}>
+      
+      
+      <div
+        className={`min-h-screen w-full antialiased ${darkMode ? "dark" : ""}`}
+      >
+        <Router>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme={darkMode ? "dark" : "light"}
+          />
 
-        <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
 
-        {/* AnimatePresence needs the correct Router context to work */}
-        <AnimatePresence mode="wait" exitBeforeEnter>
-          <AuthWrapper>
-            <RoutesWrapper />
-          </AuthWrapper>
-        </AnimatePresence>
-      </Router>
-    </div>
+          <AnimatePresence mode="wait" exitBeforeEnter>
+            <AuthWrapper>
+              
+              <RoutesWrapper />
+      
+            </AuthWrapper>
+          </AnimatePresence>
+        </Router>
+      </div>
+   
+    </Provider>
   );
 }
 
 function RoutesWrapper() {
-  const location = useLocation(); // useLocation should be used inside RoutesWrapper or child components
+  const location = useLocation();
 
   return (
     <Routes location={location} key={location.key}>
@@ -124,24 +117,25 @@ function RoutesWrapper() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/register" element={<RegistrationForm />} />
-      <Route path="/student" element={<StudentRegistration />} />{" "}
-      {/* ................ */}
+      <Route path="/student" element={<StudentRegistration />} />
       <Route path="/bulk" element={<RegisterStudentsForm />} />
       <Route path="/login" element={<LoginForm />} />
       <Route path="/course" element={<CreateCourse />} />
       <Route path="/exam" element={<ExamCreation />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/student_exam_login" element={<StudentExamLogin />} />
-      <Route path="/personalized_exam_interface" element={<PersonalizedExamInterface />} />
-      <Route path="/dynamic_exam_interface" element={<DynamicExamInterface />} />
+      
+     {/*} 
+     <Route path="/personalized_exam_interface" element={<PersonalizedExamInterface />} /><Route path="/dynamic_exam_interface" element={<DynamicExamInterface />} /> */}
+     {/*  <Route path="/student/exam/:examId" element={<PersonalizedExamInterface />} />*/}
+     <Route path="/student/exam/:examId" element={<PersonalizedExamInterface />} />
      
+      
       <Route path="/admin_panel" element={<AdminPanel />} />
-      {/* Protected Pages */}
       <Route path="/manage" element={<Manage />} />
       <Route path="/welcome" element={<Onboarding />} />
       <Route path="/quiz_demo" element={<TrialQuizDemo />} />
       <Route path="/image_upload" element={<ImageUploadQuestion />} />
-   
       <Route path="/create_question" element={<CreateQuestionForm />} />
       <Route path="/calculator" element={<CalculatorModal />} />
       <Route path="/exam/:examId" element={<ViewExamPage />} />
@@ -151,6 +145,7 @@ function RoutesWrapper() {
       <Route path="/student/:studentId" element={<ViewStudentPage />} />
       <Route path="/student/:studentId/edit" element={<EditStudentPage />} />
       <Route path="/reports" element={<Reports />} />
+       
     </Routes>
   ); 
 }

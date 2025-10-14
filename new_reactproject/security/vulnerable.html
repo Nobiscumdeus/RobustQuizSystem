@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>
+        Hello world 
+        <div id="stolenData"> 
+
+        </div>
+    </h2>   <script>
+        /*
+        // In your React app, simulate what happens with localStorage
+localStorage.setItem('studentToken', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+localStorage.setItem('userData', JSON.stringify({ id: 123, name: 'John Doe' }));
+*/   // Malicious script that steals localStorage tokens
+        function stealTokens() {
+            const token = localStorage.getItem('studentToken');
+            const userData = localStorage.getItem('userData');
+            
+            document.getElementById('stolenData').innerHTML = `
+                <h3 style="color: red;">STOLEN DATA:</h3>
+                <p><strong>Token:</strong> ${token}</p>
+                <p><strong>User Data:</strong> ${userData}</p>
+            `;
+            
+            // In real attack, this would be sent to attacker's server
+            console.log('STOLEN TOKEN:', token);
+            console.log('STOLEN USER DATA:', userData);
+        }
+        
+        stealTokens();
+
+    </script>
+</body>
+</html>

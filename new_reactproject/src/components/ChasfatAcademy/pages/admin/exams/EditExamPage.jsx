@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { jwtDecode } from "jwt-decode";
 
 const EditExamPage = () => {
   const { examId } = useParams();
@@ -19,22 +19,24 @@ const EditExamPage = () => {
     endTime: '',
     maxAttempts: 1,
     passingScore: 60.0,
-    isPublished: false
+    isPublished: false,
+    password: '',
+    state: 'DRAFT',
+    proctoringSettings: {}
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [courses, setCourses] = useState([]);
+  const [proctoringSettingsJson, setProctoringSettingsJson] = useState('{}');
   const token = localStorage.getItem('token');
-
-
 
   // Format date for datetime-local input
   const formatDateTimeForInput = (dateString) => {
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return ''; // Invalid date
+      if (isNaN(date.getTime())) return '';
       return date.toISOString().slice(0, 16);
     } catch (err) {
       console.error("Date formatting error:", err);
@@ -47,7 +49,7 @@ const EditExamPage = () => {
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return ''; // Invalid date
+      if (isNaN(date.getTime())) return '';
       return date.toISOString().split('T')[0];
     } catch (err) {
       console.error("Date formatting error:", err);
@@ -59,8 +61,12 @@ const EditExamPage = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
+
+           const decodedToken = jwtDecode(token);
+        const examinerId = decodedToken.userId;
+
         const response = await axios.get(
-          'http://localhost:5000/course',
+          `http://localhost:5000/courses/${examinerId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCourses(response.data.courses || []);
@@ -77,7 +83,6 @@ const EditExamPage = () => {
     const fetchExam = async () => {
       try {
         setLoading(true);
-        // Changed from "exams" to "exam" to match your backend route
         const response = await axios.get(
           `http://localhost:5000/exam/${examId}/edit`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -92,6 +97,9 @@ const EditExamPage = () => {
         const examData = response.data.exam;
         setExam(examData);
         
+        // Parse proctoring settings if they exist
+        const proctoringSettings = examData.proctoringSettings || {};
+        
         // Properly format and populate all form fields
         setFormData({
           title: examData.title || '',
@@ -104,8 +112,14 @@ const EditExamPage = () => {
           endTime: formatDateTimeForInput(examData.endTime),
           maxAttempts: examData.maxAttempts || 1,
           passingScore: examData.passingScore || 60.0,
-          isPublished: examData.isPublished || false
+          isPublished: examData.isPublished || false,
+          password: examData.password || '',
+          state: examData.state || 'DRAFT',
+          proctoringSettings: proctoringSettings
         });
+        
+        // Set proctoring settings as JSON string for editing
+        setProctoringSettingsJson(JSON.stringify(proctoringSettings, null, 2));
       } catch (err) {
         console.error("API error:", err);
         setError(err.response?.data?.message || 'Failed to load exam for editing');
@@ -118,14 +132,15 @@ const EditExamPage = () => {
   }, [examId, token, navigate]);
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
+    
     let processedValue = value;
     
     // Handle different input types
     if (type === 'number') {
       processedValue = value === '' ? '' : parseFloat(value);
     } else if (type === 'checkbox') {
-      processedValue = e.target.checked;
+      processedValue = checked;
     }
     
     setFormData(prev => ({ ...prev, [name]: processedValue }));
@@ -135,14 +150,43 @@ const EditExamPage = () => {
     if (error) setError(null);
   };
 
+  const handleProctoringSettingsChange = (e) => {
+    const value = e.target.value;
+    setProctoringSettingsJson(value);
+    
+    try {
+      const parsedSettings = JSON.parse(value);
+      setFormData(prev => ({ 
+        ...prev, 
+        proctoringSettings: parsedSettings 
+      }));
+    } catch (err) {
+      // Don't update if JSON is invalid
+      console.error("Invalid JSON for proctoring settings");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      // Changed from "exams" to "exam" to match your backend route
+      
+      // Prepare data for submission
+      const submitData = {
+        ...formData,
+        // Ensure numeric fields are properly formatted
+        duration: parseInt(formData.duration),
+        maxAttempts: parseInt(formData.maxAttempts),
+        passingScore: parseFloat(formData.passingScore),
+        // Parse date fields
+        date: formData.date ? new Date(formData.date).toISOString() : null,
+        startTime: formData.startTime ? new Date(formData.startTime).toISOString() : null,
+        endTime: formData.endTime ? new Date(formData.endTime).toISOString() : null,
+      };
+      
       const response = await axios.put(
         `http://localhost:5000/exam/${examId}`,
-        formData,
+        submitData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -151,6 +195,8 @@ const EditExamPage = () => {
       setExam(updatedExam);
       
       // Update form data with the returned values
+      const proctoringSettings = updatedExam.proctoringSettings || {};
+      
       setFormData({
         title: updatedExam.title || '',
         description: updatedExam.description || '',
@@ -162,14 +208,17 @@ const EditExamPage = () => {
         endTime: formatDateTimeForInput(updatedExam.endTime),
         maxAttempts: updatedExam.maxAttempts || 1,
         passingScore: updatedExam.passingScore || 60.0,
-        isPublished: updatedExam.isPublished || false
+        isPublished: updatedExam.isPublished || false,
+        password: updatedExam.password || '',
+        state: updatedExam.state || 'DRAFT',
+        proctoringSettings: proctoringSettings
       });
+      
+      setProctoringSettingsJson(JSON.stringify(proctoringSettings, null, 2));
       
       // Show success message
       setSuccess("Exam updated successfully!");
       
-      // Optional: Navigate after a short delay to show the success message
-      // setTimeout(() => navigate(`/exam/${examId}`), 1500);
     } catch (err) {
       console.error("Update error:", err);
       setError(err.response?.data?.message || 'Failed to update exam');
@@ -177,6 +226,64 @@ const EditExamPage = () => {
       setLoading(false);
     }
   };
+
+  /*
+  const handlePublishExam = async () => {
+    if (!window.confirm("Are you sure you want to publish this exam? Published exams cannot be edited.")) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await axios.patch(
+        `http://localhost:5000/exam/${examId}/publish`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(response);
+      
+      setSuccess("Exam published successfully!");
+      setTimeout(() => navigate(`/exam/${examId}`), 1500);
+    } catch (err) {
+      console.error("Publish error:", err);
+      setError(err.response?.data?.message || 'Failed to publish exam');
+      setLoading(false);
+    }
+  };
+  */
+ const handlePublishExam = async () => {
+  if (!window.confirm("Are you sure you want to publish this exam? Published exams cannot be edited.")) {
+    return;
+  }
+  
+  try {
+    setLoading(true);
+    
+    // Use the existing update endpoint with published status
+    const publishData = {
+      ...formData,
+      isPublished: true,
+      state: 'PUBLISHED',
+      publishedAt: new Date().toISOString()
+    };
+    
+    const response = await axios.put(
+      `http://localhost:5000/exam/${examId}`,
+      publishData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log(response)
+    
+    setSuccess("Exam published successfully!");
+    setFormData(prev => ({ ...prev, isPublished: true, state: 'PUBLISHED' }));
+    
+    setTimeout(() => navigate(`/exam/${examId}`), 1500);
+  } catch (err) {
+    console.error("Publish error:", err);
+    setError(err.response?.data?.message || 'Failed to publish exam');
+    setLoading(false);
+  }
+};
 
   if (loading && !exam) return <div className="p-4">Loading exam details...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -186,12 +293,22 @@ const EditExamPage = () => {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Edit Exam: {exam.title}</h1>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Cancel
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          {!formData.isPublished && (
+            <button
+              onClick={handlePublishExam}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Publish Exam
+            </button>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
@@ -224,12 +341,13 @@ const EditExamPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Course*</label>
             <select
               name="courseId"
               value={formData.courseId || ''}
               onChange={handleChange}
               className="w-full p-2 border rounded"
+              required
             >
               <option value="">Select Course</option>
               {courses.map(course => (
@@ -264,6 +382,36 @@ const EditExamPage = () => {
               required
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Exam Password*</label>
+            <input
+              type="text"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+              required
+              placeholder="Password for students to access exam"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Exam State</label>
+            <select
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="READY">Ready</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="ACTIVE">Active</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
         </div>
 
         {/* Description and Instructions */}
@@ -276,6 +424,7 @@ const EditExamPage = () => {
               onChange={handleChange}
               rows="3"
               className="w-full p-2 border rounded"
+              placeholder="Exam description for students"
             />
           </div>
 
@@ -350,6 +499,36 @@ const EditExamPage = () => {
           </div>
         </div>
 
+        {/* Proctoring Settings */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Proctoring Settings (JSON)</label>
+          <textarea
+            value={proctoringSettingsJson}
+            onChange={handleProctoringSettingsChange}
+            rows="6"
+            className="w-full p-2 border rounded font-mono text-sm"
+            placeholder='{"requireWebcam": true, "screenMonitoring": true, "fullScreenRequired": true}'
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            JSON configuration for proctoring settings. Must be valid JSON.
+          </p>
+        </div>
+
+        {/* Publish Status */}
+        <div className="flex items-center mb-6">
+          <input
+            type="checkbox"
+            id="isPublished"
+            name="isPublished"
+            checked={formData.isPublished}
+            onChange={handleChange}
+            className="h-4 w-4 text-blue-600 rounded"
+          />
+          <label htmlFor="isPublished" className="ml-2 block text-sm text-gray-900">
+            Publish Exam (students can see and access it)
+          </label>
+        </div>
+
         {/* Form Buttons */}
         <div className="flex justify-end space-x-3 mt-6">
           <button
@@ -372,4 +551,4 @@ const EditExamPage = () => {
   );
 };
 
-export default EditExamPage
+export default EditExamPage;

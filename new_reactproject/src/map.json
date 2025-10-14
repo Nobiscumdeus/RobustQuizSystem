@@ -1,0 +1,157 @@
+{
+  "src": {
+    "actions": {
+      "ChasfatAcademy": {},
+      "authActions.js": null
+    },
+    "api": {
+      "authApi.js": null,
+      "courseApi.js": null,
+      "examApi.js": null,
+      "examinationApi.js": null,
+      "notificationApi.js": null,
+      "resultApi.js": null,
+      "studentApi.js": null
+    },
+    "assets": {
+      "pexels-vlada-karpovich-4050347 (1).png": null,
+      "react.svg": null
+    },
+    "components": {
+      "ChasfatAcademy": {
+        "pages": {
+          "admin": {
+            "courses": {
+              "CreateCourse.jsx": null,
+              "EditCoursePage.jsx": null,
+              "ExaminerCourses.jsx": null,
+              "ViewCoursePage.jsx": null
+            },
+            "exams": {
+              "EditExamPage.jsx": null,
+              "ExamCreation.jsx": null,
+              "ExaminerExams.jsx": null,
+              "ViewExamPage.jsx": null
+            },
+            "questions": {
+              "CreateQuestion.jsx": null,
+              "CreateQuestionForm.jsx": null
+            },
+            "registration": {
+              "BulkRegister.jsx": null,
+              "RegisterStudentsForm.jsx": null
+            },
+            "students": {
+              "EditStudentPage.jsx": null,
+              "ExaminerStudents.jsx": null,
+              "ViewStudentPage.jsx": null
+            }
+          },
+          "auth": {
+            "LoginForm.jsx": null,
+            "LogoutForm.jsx": null,
+            "RegistrationForm.jsx": null
+          },
+          "AdminPanel.jsx": null,
+          "AuthWrapper.jsx": null,
+          "ImageUploadQuestion.jsx": null,
+          "ListExam.jsx": null,
+          "ListQuestion.jsx": null,
+          "Manage.jsx": null,
+          "Onboarding.jsx": null,
+          "PersonalizedExamInterface.jsx": null,
+          "QuestionCard.tsx": null,
+          "QuestionTesting.jsx": null,
+          "Reports.jsx": null,
+          "StudentExamLogin.jsx": null,
+          "StudentRegistration.jsx": null,
+          "TrialExamHeader.jsx": null,
+          "TrialQuestion.jsx": null,
+          "TrialQuestionNavigation.jsx": null,
+          "TrialQuiz.jsx": null,
+          "TrialQuizDemoEnhanced.jsx": null,
+          "TrialQuizQuestionEnhanced.jsx": null,
+          "TrialQuizResult.jsx": null,
+          "UserProfile.jsx": null
+        },
+        "shared": {
+          "About.jsx": null,
+          "Contact.jsx": null,
+          "Footer.jsx": null,
+          "Header.jsx": null
+        },
+        "utility": {
+          "auth.jsx": null,
+          "CalculatorModal.jsx": null,
+          "Joyride.jsx": null,
+          "Loader.jsx": null,
+          "Modal.jsx": null,
+          "OnlineStatusBar.jsx": null,
+          "ScrollDownIcon.jsx": null,
+          "Spinner.jsx": null
+        },
+        "Home.jsx": null
+      }
+    },
+    "features": {
+      "ChasfatAcademy": {
+        "auth": {
+          "authSlice.js": null,
+          "studentAuthSlice.js": null
+        },
+        "darkmode": {
+          "darkModeSlice.js": null
+        },
+        "exam": {
+          "examinationSlice.js": null,
+          "examSlice.js": null
+        },
+        "filters": {
+          "filtersSlice.js": null
+        },
+        "notifications": {
+          "notificationSlice.js": null
+        },
+        "question": {
+          "questionSlice.js": null
+        },
+        "quiz": {
+          "quizData.js": null,
+          "quizSlice.js": null
+        },
+        "result": {
+          "resultSlice.js": null
+        },
+        "student": {
+          "studentSlice.js": null
+        },
+        "timer": {
+          "timerSlice.js": null
+        },
+        "trial_quiz": {
+          "trial_quizSlice.js": null
+        },
+        "ui": {
+          "darkmodeSlice.js": null,
+          "notificationSlice.js": null,
+          "timerSlice.js": null
+        }
+      }
+    },
+    "hooks": {},
+    "utils": {
+      "axiosConfig.js": null
+    },
+    "zustand": {
+      "store.js": null,
+      "tourSteps.js": null
+    },
+    "App.css": null,
+    "App.jsx": null,
+    "axios.js": null,
+    "ErrorBoundary.jsx": null,
+    "index.css": null,
+    "main.jsx": null,
+    "store.js": null
+  }
+}

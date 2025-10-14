@@ -1,0 +1,241 @@
+paths:
+  /exams:
+    post:
+      summary: Create a new exam
+      tags: [Exams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                date: { type: string, format: date-time }
+                password: { type: string }
+                duration: { type: integer }
+                examinerId: { type: integer }
+                courseId: { type: integer }
+                description: { type: string, nullable: true }
+                instructions: { type: string, nullable: true }
+                isPublished: { type: boolean }
+                startTime: { type: string, format: date-time, nullable: true }
+                endTime: { type: string, format: date-time, nullable: true }
+                maxAttempts: { type: integer, default: 1 }
+                passingScore: { type: number, format: float, default: 60.0 }
+                proctoringSettings: { type: object, nullable: true }
+              required:
+                - title
+                - date
+                - password
+                - duration
+                - examinerId
+                - courseId
+      responses:
+        '201': { description: Exam created successfully }
+        '400': { description: Validation error }
+        '500': { description: Server error }
+
+  /exams/{examId}:
+    get:
+      summary: Get exam details by ID
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Exam found }
+        '404': { description: Exam not found or unauthorized }
+        '403': { description: Unauthorized access }
+    delete:
+      summary: Delete an exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Exam deleted }
+        '403': { description: Unauthorized to delete }
+        '404': { description: Exam not found }
+
+  /examiners/{examinerId}/exams:
+    get:
+      summary: Get all exams by an examiner
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examinerId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: List of exams }
+        '404': { description: No exams found }
+
+  /courses/{courseId}/exams:
+    get:
+      summary: Get all exams by course
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Exams retrieved }
+
+  /exams/{examId}/edit:
+    get:
+      summary: Get exam data for editing
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Exam data for edit }
+        '400': { description: Bad request }
+        '404': { description: Exam not found }
+        '403': { description: Unauthorized access }
+
+  /exams/{examId}/students:
+    post:
+      summary: Add student to exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId: { type: integer }
+              required: [studentId]
+      responses:
+        '201': { description: Student added }
+        '400': { description: Invalid request }
+        '404': { description: Exam not found }
+    delete:
+      summary: Remove student from exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: studentId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Student removed }
+        '404': { description: Not found }
+
+  /exams/{examId}/questions:
+    post:
+      summary: Add question to exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                questionId: { type: integer }
+                points: { type: number }
+                order: { type: integer }
+              required: [questionId]
+      responses:
+        '201': { description: Question added }
+        '400': { description: Question already exists }
+    delete:
+      summary: Remove question from exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: examQuestionId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Question removed }
+        '404': { description: Not found }
+
+  /exams/{examId}/questions/random:
+    post:
+      summary: Add random questions to exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count: { type: integer }
+              required: [count]
+      responses:
+        '201': { description: Random questions added }
+        '400': { description: Invalid request }
+
+  /exams/{examId}/results:
+    get:
+      summary: Get results of an exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Results retrieved }
+        '404': { description: Exam not found }
+
+  /exams/{examId}/analytics:
+    get:
+      summary: Get question analytics for an exam
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Analytics retrieved }
+        '404': { description: Exam not found }
+
+  /exams/{examId}/attendances:
+    get:
+      summary: Get exam attendances
+      tags: [Exams]
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Attendances retrieved }
+        '404': { description: Exam not found }

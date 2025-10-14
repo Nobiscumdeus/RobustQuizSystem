@@ -1,25 +1,44 @@
+require('module-alias').addAliases({
+  '@middlewares': __dirname + '/middlewares',
+  '@controllers': __dirname + '/controllers',
+  '@database': __dirname + '/database',
+  '@routes':__dirname + '/routes',
+  '@utils':__dirname + '/utils',
+  '@config':__dirname + '/config',
+});
+const path = require("path");
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+
+const swaggerDocument = YAML.load(path.join(__dirname, './docs/swagger.yaml'));
+
+
+
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const path = require("path");
+
 
 //importing helmet and rate limiting 
 const helmet = require('helmet');
 const rateLimit =require('express-rate-limit')
 
-const profileRoutes = require("./routes/profileRoutes"); // Adjust path
-const questionRoutes = require("./routes/questionAnswerRoutes");
-const searchRoutes = require("./routes/searchRoutes");
-const courseRoutes = require("./routes/courseRoutes");
-const authRoutes = require("./routes/authRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
-const studentRoutes = require("./routes/studentRoutes");
-const statsRoutes = require("./routes/statsRoutes");
-const dashboardDataRoutes =require('./routes/dashboardDataRoutes')
-const reportRoutes=require('./routes/reportRoutes');
 
-//newly added examiner route 
-const examinerRoutes= require("./routes/examinerRoutes");
+
+const profileRoutes = require('@routes/auth/profileRoutes');
+const questionRoutes = require('@routes/examiner/questionAnswerRoutes');
+const searchRoutes = require('@routes/shared/searchRoutes');
+const courseRoutes = require('@routes/examiner/courseRoutes');
+const authRoutes = require('@routes/auth/authRoutes');
+const uploadRoutes = require('@routes/shared/uploadRoutes');
+const studentRoutes = require('@routes/examiner/studentRoutes');
+const statsRoutes = require('@routes/admin/statsRoutes');
+const dashboardDataRoutes = require('@routes/admin/dashboardDataRoutes');
+const reportRoutes = require('@routes/admin/reportRoutes');
+const examRoutes = require('@routes/student/examRoutes');
+const examinerRoutes = require('@routes/examiner/examinerRoutes');
+
 
 
 // Initialize the app
@@ -36,7 +55,7 @@ const corsOptions = {
     const allowedOrigins =
       process.env.NODE_ENV === "production"
         ? ["https://your-production-site.com", "*"]
-        : ["http://localhost:5173", "http://localhost:3000", "*"]; // Development origins
+        : ["http://localhost:5173", "http://localhost:3000", "http://localhost:5000","*"]; // Development origins
 
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -44,7 +63,7 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: "GET,POST,PUT,DELETE",
+  methods: "GET,POST,PUT,DELETE,PATCH",
   //allowedHeaders: 'Content-Type,Authorization',  // Allow Authorization heade
   allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
 };
@@ -86,6 +105,9 @@ app.use(dashboardDataRoutes)
 //report routes
 app.use(reportRoutes)
 
+//Exam routes
+app.use(examRoutes)
+
 //helmet newly added for security 
 app.use(helmet())
 
@@ -116,6 +138,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

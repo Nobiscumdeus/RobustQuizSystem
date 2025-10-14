@@ -6,7 +6,7 @@ import ScrollDownIcon from "./utility/ScrollDownIcon";
 
 
 const Home = () => {
- 
+
 
   const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
 
@@ -44,64 +44,90 @@ const Home = () => {
     exit={{ opacity: 0,x:'-100vw' }}
     transition={{ duration: 0.5 }}
     
-    className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-white"}`}>
+    className={`min-h-screen  ${
+  darkMode 
+    ? "bg-gradient-to-br from-gray-800 via-blue-900 to-gray-900" 
+    : "bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600"
+}
+    `}>
       {/* Hero Section */}
-      <motion.section
-       initial={{ opacity: 0, y: 50 }}
-       whileInView={{ opacity: 1, y: 0 }}
-       transition={{ duration: 1 }}
+     {/* Replace this entire Hero Section */}
+<motion.section
+  initial={{ opacity: 0, y: 50 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 1 }}
+ className={`text-white text-center py-20 ${
+  darkMode 
+    ? "bg-gradient-to-br from-gray-800 via-blue-900 to-gray-900" 
+    : "bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600"
+}`}
 
-        className={`text-white text-center py-20 ${
-          darkMode ? "bg-gray-800" : "bg-blue-600"
-        }`}
+>
+  <motion.h2
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 1 }}
+    className="text-4xl font-bold"
+  >
+    QuizMaster - Digital Examination Platform
+  </motion.h2>
+
+  <motion.p 
+    initial={{opacity:0,y:50}}
+    animate={{ opacity:1,y:0}}
+    transition={{ duration:1, delay:0.5}}
+    className="mt-4 text-lg mb-8"
+  >
+    Choose your path below
+  </motion.p>
+
+  {/* New dual-path section */}
+  <motion.div
+    className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 1, delay: 1 }}
+  >
+    {/* Student Path */}
+   {/* Student Path */}
+<div className={`p-6 rounded-lg ${darkMode ? "bg-gray-700" : "bg-white/10"}`}>
+  <h3 className="text-xl font-bold mb-4">Taking an Exam?</h3>
+  <p className="mb-4">Access your assigned examinations</p>
+  
+  <Link
+    to="/quiz_demo"
+    className="block w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded font-semibold text-center mb-3"
+  >
+    Try Sample Quiz
+  </Link>
+  
+  <Link
+    to="/student_exam_login"
+    className="block w-full border border-white text-white hover:bg-white hover:text-blue-600 py-2 px-4 rounded font-semibold text-center"
+  >
+    Student Login
+  </Link>
+</div>
+
+    {/* Examiner Path */}
+    <div className={`p-6 rounded-lg ${darkMode ? "bg-gray-700" : "bg-white/10"}`}>
+      <h3 className="text-xl font-bold mb-4">Creating Exams?</h3>
+      <p className="mb-4">Login to manage your examinations</p>
+      <Link
+        to="/login"
+        className="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-semibold text-center"
       >
-        <motion.h2
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="text-4xl font-bold"
-        >
-          Elevate Your Knowledge with Interactive Quizzes
-        </motion.h2>
-
-        <motion.p 
-        initial={{opacity:0,y:50}}
-        animate={{ opacity:1,y:0}}
-        transition={{ duration:1, delay:0.5}}
-
-
-        className="mt-4 text-lg">
-          Join us to enhance your learning experience!
-        </motion.p>
-        <motion.div
-          className="mt-8"
-          initial={{ opacity: 0, y: 50 }} //Initial state taken off screen
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 1 }}
-        >
-          <Link
-            to="/quiz_demo"
-            className={`py-2 px-4 rounded-md font-semibold shadow-md  ${
-              darkMode
-                ? "bg-transparent text-gray-100 border  "
-                : "bg-white text-blue-600"
-            }  `}
-          >
-            Quiz Trial
-          </Link>
-
-          <a
-            href="#courses"
-            className={`ml-4 ${
-              darkMode
-                ? "bg-transparent border-gray-100 text-gray-100"
-                : "bg-white  border-blue-600 text-blue-600"
-            } border py-2 px-4 rounded-md font-semibold`}
-          >
-            View Courses
-          </a>
-        </motion.div>
-      </motion.section>
+        Examiner Login
+      </Link>
+      <Link
+        to="/register"
+        className="block w-full mt-2 border border-white text-white hover:bg-white hover:text-blue-600 py-2 px-4 rounded font-semibold text-center"
+      >
+        Create Account
+      </Link>
+    </div>
+  </motion.div>
+</motion.section>
 
       {/* Featured Courses Section */}
       <motion.section
@@ -239,6 +265,8 @@ const Home = () => {
 
       <Footer />
     </motion.div>
+
+
     
   );
  

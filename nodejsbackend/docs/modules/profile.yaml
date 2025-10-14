@@ -1,0 +1,57 @@
+paths:
+  /profile:
+    get:
+      summary: Get user profile
+      tags: [Profile]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProfileSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      summary: Update user profile
+      tags: [Profile]
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ProfileUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProfileUpdateSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  requestBodies:
+    ProfileUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas.yaml#/components/schemas/ProfileUpdateRequest'
+  
+  responses:
+    ProfileSuccess:
+      description: Profile data retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas.yaml#/components/schemas/ProfileResponse'
+    
+    ProfileUpdateSuccess:
+      description: Profile updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas.yaml#/components/schemas/UpdateResponse'
+    
+    Unauthorized:
+      $ref: 'components/schemas.yaml#/components/responses/Unauthorized'
+    
+    NotFound:
+      $ref: 'components/schemas.yaml#/components/responses/NotFound'
