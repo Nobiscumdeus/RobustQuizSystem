@@ -57,6 +57,22 @@ const EditExamPage = () => {
     }
   };
 
+  /*
+
+  const formatDateForAPI = (dateString) => {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return null;
+    return date.toISOString(); // Full ISO-8601 format
+  } catch (err) {
+    console.error("Date conversion error:", err);
+    return null;
+  }
+};
+
+*/
+
   // Fetch available courses
   useEffect(() => {
     const fetchCourses = async () => {
@@ -105,6 +121,7 @@ const EditExamPage = () => {
           title: examData.title || '',
           description: examData.description || '',
           date: formatDateForInput(examData.date),
+         // date:formatDateForAPI(examData.date),
           duration: examData.duration || 60,
           courseId: examData.courseId || '',
           instructions: examData.instructions || '',
@@ -260,12 +277,30 @@ const EditExamPage = () => {
     setLoading(true);
     
     // Use the existing update endpoint with published status
+    /*
     const publishData = {
       ...formData,
       isPublished: true,
       state: 'PUBLISHED',
       publishedAt: new Date().toISOString()
     };
+    */
+    const publishData = {
+      ...formData,
+      // Convert date fields to ISO strings
+      date: formData.date ? new Date(formData.date).toISOString() : null,
+      startTime: formData.startTime ? new Date(formData.startTime).toISOString() : null,
+      endTime: formData.endTime ? new Date(formData.endTime).toISOString() : null,
+      // Parse numeric fields
+      duration: parseInt(formData.duration),
+      maxAttempts: parseInt(formData.maxAttempts),
+      passingScore: parseFloat(formData.passingScore),
+      // Set publishing fields
+      isPublished: true,
+      state: 'PUBLISHED',
+      publishedAt: new Date().toISOString()
+    };
+
     
     const response = await axios.put(
       `http://localhost:5000/exam/${examId}`,

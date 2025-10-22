@@ -293,7 +293,7 @@ function AdminPanel() {
   return (
     <div
       className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
+        darkMode ? "bg-gradient-to-br from-gray-800 via-blue-500 to-gray-300 text-white" : "bg-gray-100 text-gray-800"
       }`}
     >
       {/* Header */}
