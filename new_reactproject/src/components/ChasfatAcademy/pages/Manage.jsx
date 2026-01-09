@@ -1,9 +1,10 @@
 import { Link ,useNavigate} from "react-router-dom";
-import { useSelector } from "react-redux";
+//import { useSelector } from "react-redux";
 import Footer from "../shared/Footer";
 import PropTypes from 'prop-types';
 import ScrollDownIcon from "../utility/ScrollDownIcon";
 import ReactJoyride from 'react-joyride';
+import { useTheme } from "@/hooks/useTheme";
 
 import useTourStore from "../../../zustand/store"
 
@@ -48,8 +49,8 @@ const Manage = () => {
 
   ];
 
-  const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
-
+  //const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
+    const { darkMode } = useTheme();
    // Callback function for React Joyride
    const handleJoyrideCallback = (data) => {
     if (data.action === 'next' && data.index === steps.length - 1) {
@@ -160,7 +161,9 @@ const Manage = () => {
 };
 
 const Card = ({ link, title, description, className }) => {
-  const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
+  const { darkMode } = useTheme();
+ 
+ // const darkMode = useSelector((state) => state.darkMode.darkMode); // Access the dark mode state
   return (
     <Link
       to={link}

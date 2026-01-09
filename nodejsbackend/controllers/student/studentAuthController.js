@@ -2,6 +2,192 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('@database'); // Import prisma client
 
+
+exports.studentLogin = async (req, res) => {
+  // Step 0 : Log incoming request body for debugging
+  console.log("🛠 Raw body received:", req.body);
+  // Step 1: Extract matric number from request body
+  const { matricNo } = req.body;
+
+  if (!matricNo) {
+    return res.status(400).json({ 
+      message: 'Matric number is required',
+      debug: { receivedMatricNo: !!matricNo }
+    });
+  }
+
+  console.log('🚀 Student login attempt:', { matricNo });
+
+  try {
+   
+
+    const student = await prisma.student.findUnique({
+      where: { matricNo },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        matricNo: true,
+        email: true,
+        isActive: true
+      }
+    });
+
+    if (!student) {
+      return res.status(401).json({ 
+        message: 'Invalid matric number'
+      });
+    }
+
+    if (!student.isActive) {
+      return res.status(401).json({ 
+        message: 'Account is inactive'
+      });
+    }
+
+    // Step 2: Get available exams - using the junction table approach
+    const currentTime = new Date();
+    
+    const availableExams = await prisma.exam.findMany({
+      where: {
+        course: {
+          courseStudents: {
+            some: { studentId: student.id }
+          }
+        },
+        OR: [
+          { state: 'PUBLISHED' },
+          { state: 'ACTIVE' }
+        ]
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        duration: true,
+        startTime: true,
+        endTime: true,
+        maxAttempts: true,
+        state: true,
+        instructions: true,
+        course: { 
+          select: { 
+            id: true, 
+            title: true, 
+            code: true 
+          } 
+        },
+        examiner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        results: {
+          where: { studentId: student.id },
+          select: { 
+            id: true, 
+            status: true, 
+            score: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    // Step 3: Process exam data
+    const examsWithStatus = availableExams.map((exam) => {
+      const attemptsTaken = exam.results.length;
+      let timeRemaining = null;
+      
+      if (exam.endTime) {
+        const timeDiff = new Date(exam.endTime) - currentTime;
+        if (timeDiff > 0) {
+          const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          timeRemaining = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+        }
+      }
+
+      return {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        duration: exam.duration,
+        course: exam.course,
+        examiner: exam.examiner,
+        attemptsTaken,
+        maxAttempts: exam.maxAttempts,
+        canTakeExam: attemptsTaken < exam.maxAttempts,
+        timeRemaining,
+        lastAttempt: attemptsTaken > 0 ? exam.results[exam.results.length - 1] : null,
+        startTime: exam.startTime ? exam.startTime.toISOString() : null,
+        endTime: exam.endTime ? exam.endTime.toISOString() : null,
+        instructions: exam.instructions
+      };
+    });
+
+    // ✅ Step 4: Generate JWT token
+    const token = jwt.sign(
+      { 
+        studentId: student.id, 
+        matricNo: student.matricNo,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        type: 'student_dashboard'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '3h' } // 3 hours for exam sessions
+    );
+
+    // ✅ Step 5: Set token as HTTP-only cookie (NEW!)
+    res.cookie('student_token', token, { // Different cookie name for students
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 8 * 60 * 60 * 1000, // 8 hours for exams
+      // domain for production
+      // domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
+    });
+
+    console.log('✅ Student login successful:', {
+      studentId: student.id,
+      matricNo: student.matricNo,
+      availableExams: examsWithStatus.length
+    });
+
+    // ✅ Step 6: Return response WITHOUT token in JSON
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      student, // No token here!
+      availableExams: examsWithStatus,
+      serverTime: currentTime.toISOString()
+    });
+
+  } catch (err) {
+    console.error('💥 Student login error:', {
+      message: err.message,
+      matricNo,
+      timestamp: new Date().toISOString()
+    });
+
+    res.status(500).json({
+      message: 'Login failed',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+/*
+
+
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { prisma } = require('@database'); // Import prisma client
+
 exports.studentLogin = async (req, res) => {
   console.log("🛠 Raw body received:", req.body);
   const { matricNo } = req.body;
@@ -183,3 +369,4 @@ exports.studentLogin = async (req, res) => {
 };
 
 
+*/

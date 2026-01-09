@@ -74,7 +74,7 @@ const studentAuthSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      localStorage.removeItem('studentToken');
+     // localStorage.removeItem('studentToken');
     },
   },
 });

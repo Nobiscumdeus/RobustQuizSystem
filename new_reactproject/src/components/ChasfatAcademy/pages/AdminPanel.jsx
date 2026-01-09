@@ -1,4 +1,456 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTheme } from "../../../hooks/useTheme";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import PropTypes from "prop-types";
+
+import Spinner from "../utility/Spinner";
+import ExaminerExams from "./admin/exams/ExaminerExams";
+import ExaminerCourses from "./admin/courses/ExaminerCourses";
+import ExaminerStudents from "./admin/students/ExaminerStudents";
+
+import { useCurrentUser } from "../../../hooks/useAuth";
+import { useDashboard } from "../../../hooks/useDashboard";
+
+function AdminPanel() {
+  const { darkMode } = useTheme();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeframe, setTimeframe] = useState("week");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+  
+  const debounceRef = useRef();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Custom hooks use 
+  const { isAuthenticated, isLoading: authLoading } = useCurrentUser();
+  const {
+    stats,
+    statsLoading,
+    dashboardLoading,
+    searchResults: apiSearchResults,
+    performSearch
+  } = useDashboard();
+
+  // Authentication check 
+  useEffect(() => {
+    if (!isAuthenticated && !authLoading) {
+      navigate('/login', {
+        state: {
+          from: location.pathname,
+          message: 'Session expired, please login to continue'
+        },
+        replace: true,
+      });
+    }
+  }, [isAuthenticated, authLoading, navigate, location]);
+
+  // Search function using hook 
+  const performSearchHandler = useCallback(async (query) => {
+    if (!query || query.trim().length < 2) {
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      await performSearch(query);
+    } catch (error) {
+      console.error("Search failed: ", error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [performSearch]);
+
+  // Search input change handler 
+  useEffect(() => {
+    const query = typeof searchQuery === "string" ? searchQuery.trim() : "";
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (query.length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        performSearchHandler(query);
+      }, 500);
+    }
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchQuery, performSearchHandler]);
+
+  const handleInputChange = (e) => {
+    const value = e.target?.value || "";
+    setSearchQuery(value);
+  };
+
+  // Combine loading states
+  const isLoading = authLoading || dashboardLoading || statsLoading;
+
+  const highlightMatch = (text, query) => {
+    if (!query || !text || typeof text !== "string") return text;
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    try {
+      const regex = new RegExp(`(${escapedQuery})`, "gi");
+      return text.split(regex).map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span key={i} className="bg-yellow-200 text-black px-0.5 rounded">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      );
+    } catch (error) {
+      console.error("Highlighting error:", error);
+      return text;
+    }
+  };
+
+  return (
+    <div className={`min-h-screen ${darkMode ? "bg-gradient-to-br from-gray-800 via-blue-500 to-gray-300 text-white" : "bg-gray-100 text-gray-800"}`}>
+      {/* Header */}
+      <header className={`${darkMode ? "bg-gray-800" : "bg-white"} shadow-md p-4 flex justify-between items-center`}>
+        <div className="flex items-center">
+          <h1 className={`text-xl font-bold ${darkMode ? "text-white" : "text-blue-600"}`}>
+            Exam System Admin Dashboard
+          </h1>
+        </div>
+
+        <div className="relative w-full max-w-xl mx-auto">
+          {/* Search Input */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search exams, students..."
+              value={searchQuery}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 rounded-xl border ${darkMode
+                  ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                } shadow-sm focus:outline-none focus:ring-2 pr-12 transition-all duration-200`}
+            />
+
+            {/* Search Controls */}
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+              {searchQuery && !isSearching && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className={`p-1 rounded-full ${darkMode
+                      ? "text-gray-400 hover:text-gray-500 hover:bg-gray-700"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    } transition-colors duration-200`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+              <div className={`w-5 h-5 flex items-center justify-center ${isSearching ? "text-blue-500" : darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                {isSearching ? <Spinner size="small" /> : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Search Results Dropdown */}
+          {searchQuery && apiSearchResults && (
+            <div className={`absolute z-30 mt-2 w-full rounded-xl shadow-lg overflow-hidden ${darkMode
+                ? "bg-gray-900 border border-gray-700"
+                : "bg-white border border-gray-200"
+              } transition-all duration-200 origin-top`} style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}>
+              
+              {isSearching ? (
+                <div className={`p-4 flex items-center justify-center ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                  <Spinner size="small" className="mr-2" />
+                  <span>Searching...</span>
+                </div>
+              ) : (
+                <div className="divide-y" style={{ divideColor: darkMode ? "rgba(55, 65, 81, 1)" : "rgba(229, 231, 235, 1)" }}>
+                  
+                  {/* Exams Section */}
+                  {apiSearchResults.exams?.length > 0 && (
+                    <div>
+                      <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-400 bg-gray-900" : "text-gray-500 bg-gray-50"}`}>
+                        Exams
+                      </div>
+                      {apiSearchResults.exams.map((exam) => (
+                        <Link to={`/exam/${exam.id}`} key={`exam-${exam.id}`} className={`block px-4 py-3 transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-50 text-gray-800"}`}>
+                          <div className="font-medium">{highlightMatch(exam.title, searchQuery)}</div>
+                          <div className={`text-sm mt-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                            {highlightMatch(exam.course, searchQuery)}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Students Section */}
+                  {apiSearchResults.students?.length > 0 && (
+                    <div>
+                      <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-400 bg-gray-900" : "text-gray-500 bg-gray-50"}`}>
+                        Students
+                      </div>
+                      {apiSearchResults.students.map((student) => (
+                        <Link to={`/student/${student.id}`} key={`student-${student.id}`} className={`block px-4 py-3 transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-50 text-gray-800"}`}>
+                          <div className="font-medium">
+                            {highlightMatch(student.firstName, searchQuery)} {highlightMatch(student.lastName, searchQuery)}
+                          </div>
+                          <div className={`text-sm mt-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                            {highlightMatch(student.matricNo, searchQuery)}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Courses Section */}
+                  {apiSearchResults.courses?.length > 0 && (
+                    <div>
+                      <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-400 bg-gray-900" : "text-gray-500 bg-gray-50"}`}>
+                        Courses
+                      </div>
+                      {apiSearchResults.courses.map((course) => (
+                        <Link to={`/course/${course.id}`} key={`course-${course.id}`} className={`block px-4 py-3 transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-50 text-gray-800"}`}>
+                          <div className="font-medium">{highlightMatch(course.title, searchQuery)}</div>
+                          <div className={`text-sm mt-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                            {highlightMatch(course.code, searchQuery)}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!apiSearchResults.exams?.length && !apiSearchResults.students?.length && !apiSearchResults.courses?.length && (
+                    <div className={`p-4 text-center ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      No results found for &quot;{searchQuery}&quot;
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto py-6 px-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-xl">Loading dashboard data...</p>
+          </div>
+        ) : (
+          <>
+            {/* Overall Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+              <StatCard title="Total Exams" value={stats.totalExams || "..."} icon="📝" darkMode={darkMode} />
+              <StatCard title="Active Exams" value={stats.ongoingExams} icon="🔄" darkMode={darkMode} highlight={true} />
+              <StatCard title="Total Students" value={stats.totalStudents} icon="👨‍🎓" darkMode={darkMode} />
+              <StatCard title="Total Courses" value={stats.totalCourses} icon="📚" darkMode={darkMode} />
+            </div>
+
+            {/* Tabs */}
+            <div className={`flex border-b flex-wrap ${darkMode ? "border-gray-700" : "border-gray-200"} mb-6`}>
+              {["overview", "exams", "students", "courses", "analytics", "settings"].map((tab) => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 font-medium ${activeTab === tab ? (darkMode ? "border-b-2 border-blue-500 text-blue-500" : "border-b-2 border-blue-600 text-blue-600") : (darkMode ? "text-gray-700" : "text-gray-600")}`}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === "overview" && (
+              <div className="space-y-6">
+                <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 mb-6`}>
+                  <ActionCard title="Exam Demo" description="Check out examination demo" icon="✏️" link="/quiz_demo" darkMode={darkMode} />
+                  <ActionCard title="Create New Exam" description="Set up a new examination" icon="✍️" link="/exam" darkMode={darkMode} />
+                  <ActionCard title="Create New Course" description="Set up a new course" icon="📝" link="/course" darkMode={darkMode} />
+                  <ActionCard title="Add Question Bank" description="Manage your question database" icon="❓" link="/create_question" darkMode={darkMode} />
+                  <ActionCard title="Student Registration" description="Register new students" icon="✍️" link="/bulk" darkMode={darkMode} />
+                  <ActionCard title="Manage Proctoring" description="Configure exam monitoring" icon="👁️" link="/proctoring" darkMode={darkMode} />
+                  <ActionCard title="Generate Reports" description="Create detailed exam reports" icon="📊" link="/reports" darkMode={darkMode} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === "exams" && (
+              <div className="space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+                  <div className="flex items-center space-x-2 mb-2 md:mb-0">
+                    <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={`px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100"} focus:outline-none focus:ring-2 focus:ring-blue-500`}>
+                      <option value="all">All Statuses</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                  <Link to="/exam" className={`px-4 py-2 rounded-lg ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"} text-white transition`}>
+                    Create New Exam
+                  </Link>
+                </div>
+                <ExaminerExams />
+              </div>
+            )}
+
+            {activeTab === "students" && <ExaminerStudents />}
+            {activeTab === "courses" && <ExaminerCourses />}
+
+            {activeTab === "analytics" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Analytics Dashboard</h2>
+                  <div className="flex space-x-2">
+                    {["week", "month", "year"].map((period) => (
+                      <button key={period} onClick={() => setTimeframe(period)} className={`px-3 py-1 rounded-md ${timeframe === period ? (darkMode ? "bg-blue-600" : "bg-blue-500 text-white") : (darkMode ? "bg-gray-700" : "bg-gray-200")}`}>
+                        {period.charAt(0).toUpperCase() + period.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {["Exam Performance Trends", "Participation Rate", "Score Distribution", "Device Usage"].map((title, index) => (
+                    <div key={index} className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-4`}>
+                      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+                      <div className="h-64 flex items-center justify-center">
+                        <p>{title} chart would render here</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-4`}>
+                <h2 className="text-xl font-semibold mb-6">System Settings</h2>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">General Settings</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">System Name</label>
+                        <input type="text" defaultValue="Exam System" className={`w-full px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100"} focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Institution Name</label>
+                        <input type="text" defaultValue="Sample University" className={`w-full px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100"} focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Admin Email</label>
+                        <input type="email" defaultValue="admin@example.com" className={`w-full px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100"} focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Time Zone</label>
+                        <select className={`w-full px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100"} focus:outline-none focus:ring-2 focus:ring-blue-500`}>
+                          <option>UTC (Coordinated Universal Time)</option>
+                          <option>EST (Eastern Standard Time)</option>
+                          <option>CST (Central Standard Time)</option>
+                          <option>PST (Pacific Standard Time)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <button className={`px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"} transition`}>
+                      Cancel
+                    </button>
+                    <button className={`px-4 py-2 rounded-lg ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"} text-white transition`}>
+                      Save Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// StatCard Component
+const StatCard = ({ title, value, icon, darkMode, highlight }) => {
+  return (
+    <div className={`p-4 rounded-lg shadow-md ${highlight ? (darkMode ? "bg-blue-900" : "bg-blue-50 border border-blue-200") : (darkMode ? "bg-gray-800" : "bg-white")}`}>
+      <div className="flex items-center">
+        <div className={`flex-shrink-0 h-12 w-12 rounded-full flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+          <span className="text-xl">{icon}</span>
+        </div>
+        <div className="ml-4">
+          <h3 className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-500"}`}>{title}</h3>
+          <p className="text-2xl font-semibold">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ActionCard Component
+const ActionCard = ({ title, description, icon, link, darkMode }) => {
+  return (
+    <Link to={link} className={`flex items-center p-4 rounded-lg shadow-md transition hover:shadow-lg ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"}`}>
+      <div className={`flex-shrink-0 h-12 w-12 rounded-full flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+        <span className="text-xl">{icon}</span>
+      </div>
+      <div className="ml-4">
+        <h3 className="font-medium">{title}</h3>
+        <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{description}</p>
+      </div>
+    </Link>
+  );
+};
+
+StatCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  icon: PropTypes.string.isRequired,
+  darkMode: PropTypes.bool,
+  highlight: PropTypes.bool,
+};
+
+ActionCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  icon: PropTypes.string.isRequired,
+  link: PropTypes.string.isRequired,
+  darkMode: PropTypes.bool,
+};
+
+export default AdminPanel;
+
+
+
+
+
+
+/*
+semmed we had success at login but we are kept there AdminPanel.jsx:189 
+ Error fetching user data: 
+AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+AdminPanel.jsx:191 
+ null
+AdminPanel.jsx:180 
+ 
+ GET http://localhost:5000/profile 401 (Unauthorized)
+AdminPanel.jsx:189 
+ Error fetching user data: 
+AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+AdminPanel.jsx:191 
+ null
+auth.jsx:24 
+ Auth check failed: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON, prolly due to admin panel issue, we should update its stuffs too right import { useState, useEffect, useCallback, useRef } from "react";
 /*
 import {
   LineChart,
@@ -15,8 +467,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
- */
-import { useSelector } from "react-redux";
+ 
+import { useTheme } from "../../../hooks/useTheme";
+
 import { Link, useNavigate , useLocation} from "react-router-dom";
 import PropTypes from "prop-types";
 import axios from "axios";
@@ -25,14 +478,13 @@ import Spinner from "../utility/Spinner";
 import { isAuthenticated } from "../utility/auth";
 
 
-
-
 import ExaminerExams from "./admin/exams/ExaminerExams";
 import ExaminerCourses from "./admin/courses/ExaminerCourses";
 import ExaminerStudents from "./admin/students/ExaminerStudents";
 
 function AdminPanel() {
-  const darkMode = useSelector((state) => state.darkMode?.darkMode) || false;
+ // const darkMode = useSelector((state) => state.darkMode?.darkMode) || false;
+ const { darkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [timeframe, setTimeframe] = useState("week");
   const [isLoading, setIsLoading] = useState(true);
@@ -296,7 +748,7 @@ function AdminPanel() {
         darkMode ? "bg-gradient-to-br from-gray-800 via-blue-500 to-gray-300 text-white" : "bg-gray-100 text-gray-800"
       }`}
     >
-      {/* Header */}
+    
       <header
         className={`${
           darkMode ? "bg-gray-800" : "bg-white"
@@ -313,7 +765,7 @@ function AdminPanel() {
         </div>
 
         <div className="relative w-full max-w-xl mx-auto">
-          {/* Search Input */}
+         
           <div className="relative">
             <input
               type="text"
@@ -327,7 +779,7 @@ function AdminPanel() {
               } shadow-sm focus:outline-none focus:ring-2 pr-12 transition-all duration-200`}
             />
 
-            {/* Search Controls */}
+      
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
               {searchQuery && !isSearching && (
                 <button
@@ -384,7 +836,7 @@ function AdminPanel() {
             </div>
           </div>
 
-          {/* Search Results Dropdown */}
+        
           {searchQuery && (
             <div
               className={`absolute z-30 mt-2 w-full rounded-xl shadow-lg overflow-hidden ${
@@ -397,7 +849,7 @@ function AdminPanel() {
                   "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               }}
             >
-              {/* Loading State */}
+              
               {isSearching && (
                 <div
                   className={`p-4 flex items-center justify-center ${
@@ -409,7 +861,7 @@ function AdminPanel() {
                 </div>
               )}
 
-              {/* Results */}
+              
               {!isSearching && (
                 <div
                   className="divide-y"
@@ -419,7 +871,7 @@ function AdminPanel() {
                       : "rgba(229, 231, 235, 1)",
                   }}
                 >
-                  {/* Exams Section */}
+                
                   {searchResults?.exams?.length > 0 && (
                     <div>
                       <div
@@ -442,7 +894,9 @@ function AdminPanel() {
                           }`}
                         >
                           <div className="font-medium">
-                            {/*{exam.title} */}
+                      
+
+
                             {highlightMatch(exam.title, searchQuery)}
                           </div>
                           <div
@@ -450,7 +904,7 @@ function AdminPanel() {
                               darkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            {/*{exam.course} */}
+                           
                             {highlightMatch(exam.course, searchQuery)}
                           </div>
                         </Link>
@@ -458,7 +912,7 @@ function AdminPanel() {
                     </div>
                   )}
 
-                  {/* Students Section */}
+                
                   {searchResults?.students?.length > 0 && (
                     <div>
                       <div
@@ -481,7 +935,9 @@ function AdminPanel() {
                           }`}
                         >
                           <div className="font-medium">
-                            {/* {student.firstName} {student.lastName} */}
+                         
+
+
                             {highlightMatch(
                               student.firstName,
                               searchQuery
@@ -493,7 +949,7 @@ function AdminPanel() {
                               darkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            {/*   {student.matricNo} */}
+                      
 
                             {highlightMatch(student.matricNo, searchQuery)}
                           </div>
@@ -502,7 +958,7 @@ function AdminPanel() {
                     </div>
                   )}
 
-                  {/* Courses Section */}
+                
                   {searchResults?.courses?.length > 0 && (
                     <div>
                       <div
@@ -525,7 +981,8 @@ function AdminPanel() {
                           }`}
                         >
                           <div className="font-medium">
-                            {/* {course.title} */}
+                        
+
                             {highlightMatch(course.title, searchQuery)}
                           </div>
                           <div
@@ -533,7 +990,9 @@ function AdminPanel() {
                               darkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            {/*   {course.code}*/}
+                            
+
+
                             {highlightMatch(course.title, searchQuery)}
                           </div>
                         </Link>
@@ -541,7 +1000,7 @@ function AdminPanel() {
                     </div>
                   )}
 
-                  {/* Empty State */}
+                  
                   {searchResults &&
                     !searchResults.exams?.length &&
                     !searchResults.students?.length &&
@@ -561,7 +1020,7 @@ function AdminPanel() {
         </div>
       </header>
 
-      {/* Main Content */}
+    
       <main className="container mx-auto py-6 px-4">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -569,7 +1028,10 @@ function AdminPanel() {
           </div>
         ) : (
           <>
-            {/* Overall Stats */}
+            
+
+
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
               <StatCard
                 title="Total Exams"
@@ -612,12 +1074,11 @@ function AdminPanel() {
                 darkMode={darkMode}
               />
 
-              */}
-
+              
 
             </div>
 
-            {/* Tabs */}
+        
             <div
               className={`flex border-b flex-wrap ${
                 darkMode ? "border-gray-700" : "border-gray-200"
@@ -709,10 +1170,10 @@ function AdminPanel() {
               </button>
             </div>
 
-            {/* Tab Content */}
+        
             {activeTab === "overview" && (
               <div className="space-y-6">
-                {/* Quick Actions */}
+           
                 <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 mb-6`}>
                   <ActionCard
                     title="Exam Demo"
@@ -765,10 +1226,10 @@ function AdminPanel() {
                   />
                 </div>
 
-                {/* Quick Stats */}
+             
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"></div>
 
-                {/* Quick Stats Charts */}
+            
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
               </div>
             )}
@@ -776,7 +1237,7 @@ function AdminPanel() {
             {activeTab === "exams" && (
              
              <div className="space-y-6">
-                {/* Exam Controls */}
+           
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                   <div className="flex items-center space-x-2 mb-2 md:mb-0">
                     <select
@@ -804,7 +1265,8 @@ function AdminPanel() {
                   </Link>
                 </div>
 
-                {/* Exam Table */}
+
+
 
                 <ExaminerExams />
               </div>
@@ -876,7 +1338,7 @@ function AdminPanel() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Exam Trends */}
+           
                   <div
                     className={`${
                       darkMode ? "bg-gray-800" : "bg-white"
@@ -886,14 +1348,14 @@ function AdminPanel() {
                       Exam Performance Trends
                     </h3>
                     <div className="h-64">
-                      {/* Chart placeholder */}
+                    
                       <div className="w-full h-full flex items-center justify-center">
                         <p>Performance trend chart would render here</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Participation Rate */}
+               
                   <div
                     className={`${
                       darkMode ? "bg-gray-800" : "bg-white"
@@ -903,14 +1365,13 @@ function AdminPanel() {
                       Participation Rate
                     </h3>
                     <div className="h-64">
-                      {/* Chart placeholder */}
+                   
                       <div className="w-full h-full flex items-center justify-center">
                         <p>Participation rate chart would render here</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Score Distribution */}
                   <div
                     className={`${
                       darkMode ? "bg-gray-800" : "bg-white"
@@ -920,14 +1381,15 @@ function AdminPanel() {
                       Score Distribution
                     </h3>
                     <div className="h-64">
-                      {/* Chart placeholder */}
+                
+
                       <div className="w-full h-full flex items-center justify-center">
                         <p>Score distribution chart would render here</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Device Usage */}
+               
                   <div
                     className={`${
                       darkMode ? "bg-gray-800" : "bg-white"
@@ -935,7 +1397,9 @@ function AdminPanel() {
                   >
                     <h3 className="text-lg font-semibold mb-2">Device Usage</h3>
                     <div className="h-64">
-                      {/* Chart placeholder */}
+                   
+
+
                       <div className="w-full h-full flex items-center justify-center">
                         <p>Device usage chart would render here</p>
                       </div>
@@ -954,7 +1418,7 @@ function AdminPanel() {
                 <h2 className="text-xl font-semibold mb-6">System Settings</h2>
 
                 <div className="space-y-6">
-                  {/* General Settings */}
+         
                   <div>
                     <h3 className="text-lg font-medium mb-4">
                       General Settings
@@ -1014,7 +1478,6 @@ function AdminPanel() {
                     </div>
                   </div>
 
-                  {/* Exam Settings */}
                   <div>
                     <h3 className="text-lg font-medium mb-4">Exam Settings</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1067,7 +1530,8 @@ function AdminPanel() {
                     </div>
                   </div>
 
-                  {/* Security Settings */}
+
+
                   <div>
                     <h3 className="text-lg font-medium mb-4">
                       Security Settings
@@ -1220,3 +1684,5 @@ ActionCard.propTypes = {
 };
 
 export default AdminPanel;
+
+*/

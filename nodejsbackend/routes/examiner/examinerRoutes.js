@@ -24,40 +24,11 @@ router.get('/exam/:examId/results', authenticate, examinerOnly, examController.g
 router.get('/exam/:examId/question-analytics', authenticate, examinerOnly, examController.getQuestionAnalytics);
 router.get('/exam/:examId/attendances', authenticate, examinerOnly, examController.getExamAttendances);
 router.post('/exam/:examId/questions/random', authenticate, examinerOnly, examController.addRandomQuestionsToExam);
+
+router.patch('/exam/:examId/publish', authenticate, examinerOnly, examController.publishExam);
+router.patch('/exam/:examId/unpublish', authenticate, examinerOnly, examController.unpublishExam);
+
 module.exports = router;
 
 
-
-
-/*
-const {ExaminerController, StudentController} = require('@controllers');
-const {authenticate} =require('@middleware/auth');
-
-const express = require('express');
-const router = express.Router();
-
-
-const examinerController =new ExaminerController();
-const studentController=new StudentController();
-
-router.use(authenticate);
-
-router.post('/exams',examinerController.createExam);
-router.post('/exams/:examId/questions', examinerController.addQuestionsToExam);
-router.put('/exams/:examId/publish', examinerController.publishExam);
-router.put('/exams/:examId/activate', examinerController.activateExam);
-router.get('/exams/:examId/results', examinerController.getExamResults);
-
-
-
-
-//Student router later
-router.get('/exams', studentController.getAvailableExams);
-router.post('/exams/:examId/start', studentController.startExam);
-router.post('/exams/:examId/submit', studentController.submitExam);
-router.get('/exam-history', studentController.getExamHistory);
-
-module.exports=router ;
-
-*/
 

@@ -160,8 +160,7 @@ exports.validateExamAccess = async (req, res) => {
 
 
 exports.startExamSession = async (req, res) => {
-   console.log('🔍 startExamSession Debug - req.student:', req.student);
-  console.log('🔍 startExamSession Debug - auth header:', req.headers.authorization);
+
   const { sessionId } = req.params;
   const studentId = req.student.studentId; // From JWT middleware
 
@@ -478,7 +477,9 @@ exports.calculateRemainingTime = (examResult, exam) => {
 // Fetch question batch for exam session
 exports.fetchQuestionBatch = async (req, res) => {
   const { examId } = req.params;
-  const { studentId, batchSize = 10, startIndex = 0 } = req.query;
+  //const { studentId, batchSize = 10, startIndex = 0 } = req.query;
+  const { batchSize = 10, startIndex = 0} = req.query;
+  const studentId = req.student.studentId;
 
   try {
     // Validate exam and student
@@ -576,12 +577,15 @@ exports.fetchQuestionBatch = async (req, res) => {
 
 // Get available exams for a student
 exports.getStudentExams = async (req, res) => {
-  const { matricNo } = req.params;
+
+  //const { matricNo } = req.params;
+  const studentId = req.student.studentId; 
 
   try {
     const student = await prisma.student.findUnique({
-      where: { matricNo },
-      select: { id: true }
+    //  where: { matricNo },
+      where : { id:studentId},
+      select: { id: true, matricNo:true}
     });
 
     if (!student) {
@@ -1042,7 +1046,8 @@ exports.syncTimer = async (req, res) => {
 // Send heartbeat
 exports.sendHeartbeat = async (req, res) => {
   const { sessionId } = req.params;
-  const studentId = req.user.studentId;
+  //const studentId = req.user.studentId;
+  const studentId = req.student.studentId;
   const { clientTime } = req.body;
 
   try {
@@ -1194,7 +1199,8 @@ exports.getCurrentAnswers = async (req, res) => {
 // Get violations
 exports.getViolations = async (req, res) => {
   const { sessionId } = req.params;
-  const studentId = req.user.studentId;
+ // const studentId = req.user.studentId;
+ const studentId = req.student.studentId;
 
   try {
     const examSession = await prisma.examSession.findFirst({
@@ -1425,18 +1431,52 @@ exports.getExamAttendances = async (req, res) => {
 };
 
 
+
+// Update single answer
 // Update single answer
 exports.updateAnswer = async (req, res) => {
   const { sessionId } = req.params;
   const { questionId, answer } = req.body;
   const studentId = req.student.studentId;
 
+  console.log('🔄 Update Answer Request:', { 
+    sessionId, 
+    questionId, 
+    questionIdType: typeof questionId, // Add this
+    studentId,
+    answerPreview: answer?.substring(0, 50)
+  });
+
   try {
+    // ✅ Validate inputs first
+    if (!questionId || !answer) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: questionId and answer' 
+      });
+    }
+
+    // ✅ Ensure proper type conversion
+    const parsedSessionId = parseInt(sessionId);
+    const parsedQuestionId = parseInt(questionId);
+    const parsedStudentId = parseInt(studentId);
+
+    // ✅ Validate parsed values
+    if (isNaN(parsedSessionId) || isNaN(parsedQuestionId) || isNaN(parsedStudentId)) {
+      return res.status(400).json({ 
+        message: 'Invalid ID format',
+        details: {
+          sessionId: isNaN(parsedSessionId),
+          questionId: isNaN(parsedQuestionId),
+          studentId: isNaN(parsedStudentId)
+        }
+      });
+    }
+
     // Verify session
     const examSession = await prisma.examSession.findFirst({
       where: {
-        id: parseInt(sessionId),
-        studentId: parseInt(studentId),
+        id: parsedSessionId,
+        studentId: parsedStudentId,
         isActive: true
       },
       include: {
@@ -1452,46 +1492,148 @@ exports.updateAnswer = async (req, res) => {
     });
 
     if (!examSession) {
+      console.log('❌ Session not found or inactive:', { sessionId, studentId });
       return res.status(404).json({ message: 'Active exam session not found' });
     }
 
     // Validate exam timing
     const timing = exports.calculateRemainingTime(examSession, examSession.exam);
-    if (!timing.timeRemaining) {
-      return res.status(403).json({ message: 'Exam time has expired' });
+    
+    console.log('⏰ Timing Check:', {
+      sessionId,
+      startedAt: examSession.startedAt,
+      examDuration: examSession.exam.duration,
+      timeRemaining: timing.timeRemaining,
+      isExpired: timing.timeRemaining <= 0
+    });
+
+    if (timing.timeRemaining <= 0) {
+      console.log('⏰ Time expired:', {
+        timeRemaining: timing.timeRemaining,
+        studentId
+      });
+      return res.status(403).json({ 
+        message: 'Exam time has expired',
+        timeRemaining: timing.timeRemaining 
+      });
     }
 
     // Verify question belongs to exam
     const examQuestion = await prisma.examQuestion.findFirst({
       where: {
         examId: examSession.examId,
-        questionId: parseInt(questionId)
+        questionId: parsedQuestionId
       }
     });
 
     if (!examQuestion) {
+      console.log('❌ Question not in exam:', { 
+        questionId: parsedQuestionId, 
+        examId: examSession.examId 
+      });
       return res.status(404).json({ message: 'Question not found in this exam' });
     }
 
-    // Update or create answer
-    const studentAnswer = await prisma.studentAnswer.upsert({
+    // ✅ CRITICAL: Get or create ExamResult
+    let examResult = await prisma.examResult.findFirst({
       where: {
-        examSessionId_questionId: {
-          examSessionId: parseInt(sessionId),
-          questionId: parseInt(questionId)
-        }
-      },
-      update: {
-        studentResponse: answer,
-        updatedAt: new Date()
-      },
-      create: {
-        examSessionId: parseInt(sessionId),
-        questionId: parseInt(questionId),
-        studentResponse: answer,
-        examId: examSession.examId,
-        studentId: parseInt(studentId)
+        studentId: parsedStudentId,
+        examId: examSession.examId
       }
+    });
+
+    if (!examResult) {
+      // Get total questions count
+      const totalQuestions = await prisma.examQuestion.count({
+        where: { examId: examSession.examId }
+      });
+
+      examResult = await prisma.examResult.create({
+        data: {
+          studentId: parsedStudentId,
+          examId: examSession.examId,
+          status: 'IN_PROGRESS',
+          submittedAt: new Date(),
+          totalQuestions: totalQuestions,
+          correctAnswers: 0,
+          percentage: 0,
+          score: 0
+        }
+      });
+      console.log('📝 Created new ExamResult:', examResult.id);
+    }
+
+    console.log('🔍 Looking for existing answer:', {
+      examResultId: examResult.id,
+      questionId: parsedQuestionId
+    });
+
+    // ✅ Now create/update StudentAnswer with correct examResultId
+    const existingAnswer = await prisma.studentAnswer.findFirst({
+      where: {
+        examResultId: examResult.id,
+        questionId: parsedQuestionId
+      }
+    });
+
+    console.log('📌 Existing answer found:', existingAnswer ? 'YES' : 'NO', existingAnswer?.id);
+
+    let studentAnswer;
+    
+    if (existingAnswer) {
+      // Update existing answer
+      studentAnswer = await prisma.studentAnswer.update({
+        where: { id: existingAnswer.id },
+        data: {
+          studentResponse: answer,
+          updatedAt: new Date()
+        }
+      });
+      console.log('✏️ Updated existing answer:', existingAnswer.id);
+    } else {
+      // Create new answer - wrap in try/catch to catch unique constraint violations
+      try {
+        studentAnswer = await prisma.studentAnswer.create({
+          data: {
+            examResultId: examResult.id,
+            questionId: parsedQuestionId,
+            studentResponse: answer
+          }
+        });
+        console.log('🆕 Created new StudentAnswer:', studentAnswer.id);
+      } catch (createError) {
+        // If unique constraint violation, try to find and update
+        if (createError.code === 'P2002') {
+          console.log('⚠️ Unique constraint violation, attempting to find and update...');
+          const conflictingAnswer = await prisma.studentAnswer.findFirst({
+            where: {
+              examResultId: examResult.id,
+              questionId: parsedQuestionId
+            }
+          });
+          
+          if (conflictingAnswer) {
+            studentAnswer = await prisma.studentAnswer.update({
+              where: { id: conflictingAnswer.id },
+              data: {
+                studentResponse: answer,
+                updatedAt: new Date()
+              }
+            });
+            console.log('✏️ Updated conflicting answer:', conflictingAnswer.id);
+          } else {
+            throw createError; // Re-throw if we can't find the conflicting record
+          }
+        } else {
+          throw createError; // Re-throw if it's not a unique constraint error
+        }
+      }
+    }
+
+    console.log('✅ Answer saved successfully:', { 
+      answerId: studentAnswer.id,
+      questionId: parsedQuestionId,
+      examResultId: examResult.id
     });
 
     res.status(200).json({
@@ -1499,10 +1641,23 @@ exports.updateAnswer = async (req, res) => {
       answer: studentAnswer
     });
   } catch (err) {
-    console.error('Update answer error:', err);
+    console.error('💥 Update answer error:', {
+      message: err.message,
+      code: err.code, // Add Prisma error code
+      meta: err.meta, // Add Prisma error metadata
+      sessionId,
+      questionId,
+      studentId,
+      timestamp: new Date().toISOString(),
+      stack: err.stack
+    });
+
     res.status(500).json({
       message: 'Failed to update answer',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: process.env.NODE_ENV === 'development' ? {
+        message: err.message,
+        code: err.code
+      } : undefined
     });
   }
 };
@@ -1513,29 +1668,3 @@ exports.updateAnswer = async (req, res) => {
 
 
 
-
-
-
-/*
-
-module.exports = {
-  studentLogin,
-  validateExamAccess,
-  startExamSession,
-  fetchExamSession,
-  validateExamTiming,
-  calculateRemainingTime,
-  getStudentExams,
-  fetchQuestionBatch,
-  updateAnswer,
-  saveAnswerBatch,
-  submitExam,
-  autoSubmitExam,
-  syncTimer,
-  sendHeartbeat,
-  logViolation,
-  getCurrentAnswers,
-  getViolations
-};
-
-*/

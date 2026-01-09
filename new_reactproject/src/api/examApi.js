@@ -1,257 +1,203 @@
-import apiClient from "../utils/axiosConfig";
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// Retry function for failed requests
-const retryRequest = async (fn, retries = 3, delay = 1000) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
-    }
-  }
-};
+export const examApi = createApi({
+  reducerPath: 'examApi',
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: 'http://localhost:5000',
+    credentials: 'include',
+  }),
+  tagTypes: ['Exam', 'ExamQuestion', 'ExamStudent', 'ExamResult'],
+  endpoints: (builder) => ({
+    // Get single exam with details
+    getExamById: builder.query({
+      query: (examId) => `/singleexam/${examId}`,
+      providesTags: (result, error, examId) => [
+        { type: 'Exam', id: examId },
+        'ExamQuestion',
+        'ExamStudent',
+        'ExamResult'
+      ],
+    }),
+    
+    // Get eligible students for exam
+    getEligibleStudents: builder.query({
+      query: (examId) => `/exam/${examId}/eligible-students`,
+      providesTags: ['ExamStudent'],
+    }),
+    
+    // Get course questions
+    getCourseQuestions: builder.query({
+      query: ({ courseId, page = 1, limit = 1000 }) => 
+        `/course/${courseId}/questions?page=${page}&limit=${limit}`,
+      providesTags: ['ExamQuestion'],
+    }),
+    
+    // Get student results
+    getStudentResults: builder.query({
+      query: (examId) => `/exam/${examId}/results`,
+      providesTags: ['ExamResult'],
+    }),
+    
+    // Get question analytics
+    getQuestionAnalytics: builder.query({
+      query: (examId) => `/exam/${examId}/question-analytics`,
+      providesTags: ['ExamQuestion'],
+    }),
+    
+    // Get attendances
+    getAttendances: builder.query({
+      query: (examId) => `/exam/${examId}/attendances`,
+      providesTags: ['ExamStudent'],
+    }),
+    
+    // Add question to exam
+    addQuestionToExam: builder.mutation({
+      query: ({ examId, questionId }) => ({
+        url: `/exam/${examId}/questions`,
+        method: 'POST',
+        body: { questionId },
+      }),
+      invalidatesTags: ['ExamQuestion'],
+    }),
+    
+    // Add random questions
+    addRandomQuestions: builder.mutation({
+      query: ({ examId, count }) => ({
+        url: `/exam/${examId}/questions/random`,
+        method: 'POST',
+        body: { count },
+      }),
+      invalidatesTags: ['ExamQuestion'],
+    }),
+    
+    // Remove question from exam
+    removeQuestionFromExam: builder.mutation({
+      query: ({ examId, examQuestionId }) => ({
+        url: `/exam/${examId}/questions/${examQuestionId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['ExamQuestion'],
+    }),
+    
+    // Add student to exam
+    addStudentToExam: builder.mutation({
+      query: ({ examId, studentId }) => ({
+        url: `/exam/${examId}/students`,
+        method: 'POST',
+        body: { studentId },
+      }),
+      invalidatesTags: ['ExamStudent', 'ExamResult'],
+    }),
+    
+    // Remove student from exam
+    removeStudentFromExam: builder.mutation({
+      query: ({ examId, studentId }) => ({
+        url: `/exam/${examId}/students/${studentId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['ExamStudent', 'ExamResult'],
+    }),
 
-// Authentication
-export const studentAuth = {
-  // Student login with matric number and password
-  login: async (matricNo, examPassword) => {
-    const response = await apiClient.post('/exam/login', {
-      matricNo,
-      password: examPassword
-    });
-    if (response.data.token) {
-      localStorage.setItem('studentToken', response.data.token);
-    }
-    return response.data;
-  },
 
-  // Get available exams
-  getAvailableExams: async (matricNo) => {
-    const response = await apiClient.get(`/student/${matricNo}/exams`);
-    return response.data;
-  },
+    
+    // Update exam
+    updateExam: builder.mutation({
+      query: ({ examId, ...data }) => ({
+        url: `/exam/${examId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { examId }) => [
+        { type: 'Exam', id: examId }
+      ],
+    }),
+    getExaminerExams: builder.query({
+  query: (examinerId) => `/exams/${examinerId}`,
+  providesTags: ['Exam'],
+}),
+        getExamForEdit: builder.query({
+      query: (examId) => `/exam/${examId}/edit`,
+      providesTags: (result, error, examId) => [{ type: 'Exam', id: examId }],
+    }),
+    // Delete exam
+    deleteExam: builder.mutation({
+      query: (examId) => ({
+        url: `/exam/${examId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Exam'],
+    }),
+getExaminerCourses: builder.query({
+  query: (examinerId) => `/courses/${examinerId}`,
+  providesTags: ['Course'],
+}),
 
-  // Verify student session
-  verifySession: async () => {
-    const response = await apiClient.get('/auth/student/verify-session');
-    return response.data;
-  }
-};
 
-// Exam Session Management
-export const examSession = {
-  // Fetch complete exam session data
-  fetchExamSession: async (examId, studentId) => {
-    const response = await apiClient.get(`/exam/${examId}/session`, {
-      params: { studentId }
-    });
-    return response.data;
-  },
 
-  // Start new exam session
-  startSession: async (examId, studentId) => {
-    const response = await apiClient.post(`/exam/${examId}/start`, {
-      studentId
-    });
-    return response.data;
-  },
+publishExam: builder.mutation({
+  query: (examId) => ({
+    url: `/exam/${examId}/publish`,
+    method: 'PATCH',
+  }),
+  invalidatesTags: (result, error, examId) => [
+    { type: 'Exam', id: examId },
+    { type: 'Exam', id: 'LIST' }
+  ],
+}),
 
-  // Check if exam session is still valid
-  checkSessionStatus: async (sessionId) => {
-    const response = await apiClient.get(`/exam/session/${sessionId}/status`);
-    return response.data;
-  },
+unpublishExam: builder.mutation({
+  query: (examId) => ({
+    url: `/exam/${examId}/unpublish`,
+    method: 'PATCH',
+  }),
+  invalidatesTags: (result, error, examId) => [
+    { type: 'Exam', id: examId },
+    { type: 'Exam', id: 'LIST' }
+  ],
+}),
+// Add this to your examApi.js endpoints
+createExam: builder.mutation({
+  query: (examData) => ({
+    url: '/exams',
+    method: 'POST',
+    body: examData,
+  }),
+  invalidatesTags: ['Exam'],
+}),
 
-  // End exam session
-  endSession: async (sessionId) => {
-    const response = await apiClient.post(`/exam/session/${sessionId}/end`);
-    return response.data;
-  }
-};
 
-// Question Management
-export const questionManager = {
-  // Load questions in batches (pagination)
-  fetchQuestionBatch: async (examId, page = 1, batchSize = 5) => {
-    const response = await apiClient.get(`/exam/${examId}/questions`, {
-      params: { page, limit: batchSize }
-    });
-    return response.data;
-  },
+  }),
 
-  // Get single question by ID
-  fetchQuestion: async (examId, questionId) => {
-    const response = await apiClient.get(`/exam/${examId}/questions/${questionId}`);
-    return response.data;
-  },
 
-  // Preload next batch of questions
-  preloadQuestions: async (examId, startIndex, count = 3) => {
-    const response = await apiClient.get(`/exam/${examId}/questions/preload`, {
-      params: { startIndex, count }
-    });
-    return response.data;
-  }
-};
+});
 
-// Answer Management
-export const answerManager = {
-  // Update single answer (auto-save)
-  updateAnswer: async (sessionId, questionId, answer) => {
-    return retryRequest(async () => {
-      const response = await apiClient.put(`/exam/session/${sessionId}/answer`, {
-        questionId,
-        answer,
-        timestamp: new Date().toISOString()
-      });
-      return response.data;
-    });
-  },
+// Add these to your existing examApi.js endpoints
 
-  // Save multiple answers (batch save)
-  saveAnswerBatch: async (sessionId, answers) => {
-    return retryRequest(async () => {
-      const response = await apiClient.put(`/exam/session/${sessionId}/answers/batch`, {
-        answers,
-        timestamp: new Date().toISOString()
-      });
-      return response.data;
-    });
-  },
 
-  // Get student's current answers
-  getCurrentAnswers: async (sessionId) => {
-    const response = await apiClient.get(`/exam/session/${sessionId}/answers`);
-    return response.data;
-  }
-};
 
-// Exam Submission
-export const examSubmission = {
-  // Submit final exam
-  submitExam: async (sessionId, answers, violations = []) => {
-    const response = await apiClient.post(`/exam/session/${sessionId}/submit`, {
-      answers,
-      violations,
-      submittedAt: new Date().toISOString()
-    });
-    return response.data;
-  },
 
-  // Auto-submit (when time runs out)
-  autoSubmitExam: async (sessionId, answers, reason = 'TIME_UP') => {
-    const response = await apiClient.post(`/exam/session/${sessionId}/auto-submit`, {
-      answers,
-      reason,
-      submittedAt: new Date().toISOString()
-    });
-    return response.data;
-  }
-};
 
-// Timer & Sync
-export const timerSync = {
-  // Sync remaining time with server
-  syncTimer: async (sessionId) => {
-    const response = await apiClient.get(`/exam/session/${sessionId}/time`);
-    return response.data;
-  },
 
-  // Send heartbeat to keep session alive
-  sendHeartbeat: async (sessionId) => {
-    const response = await apiClient.post(`/exam/session/${sessionId}/heartbeat`);
-    return response.data;
-  },
+export const {
+  useGetExamByIdQuery,
+    useGetExaminerExamsQuery,
+  useGetEligibleStudentsQuery,
+  useGetCourseQuestionsQuery,
+  useGetStudentResultsQuery,
+  useGetQuestionAnalyticsQuery,
+  useGetAttendancesQuery,
+  useAddQuestionToExamMutation,
+  useAddRandomQuestionsMutation,
+  useRemoveQuestionFromExamMutation,
+  useAddStudentToExamMutation,
+  useRemoveStudentFromExamMutation,
 
-  // Check if exam is still active
-  checkExamStatus: async (examId) => {
-    const response = await apiClient.get(`/exam/${examId}/status`);
-    return response.data;
-  }
-};
-
-// Proctoring & Violations
-export const proctoring = {
-  // Log proctoring violation
-  logViolation: async (sessionId, violationType, details) => {
-    const response = await apiClient.post(`/exam/session/${sessionId}/violation`, {
-      type: violationType,
-      details,
-      timestamp: new Date().toISOString()
-    });
-    return response.data;
-  },
-
-  // Get violation history
-  getViolations: async (sessionId) => {
-    const response = await apiClient.get(`/exam/session/${sessionId}/violations`);
-    return response.data;
-  }
-};
-
-// Connection & Health
-export const connectionManager = {
-  // Check API health
-  checkHealth: async () => {
-    const response = await apiClient.get('/health');
-    return response.data;
-  },
-
-  // Test connection speed
-  testConnection: async () => {
-    const start = Date.now();
-    await apiClient.get('/ping');
-    const end = Date.now();
-    return { latency: end - start };
-  }
-};
-
-// Offline Support
-export const offlineManager = {
-  // Queue answers for offline sync
-  queueAnswer: (sessionId, questionId, answer) => {
-    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
-    queue.push({
-      sessionId,
-      questionId,
-      answer,
-      timestamp: new Date().toISOString(),
-      synced: false
-    });
-    localStorage.setItem('offline_queue', JSON.stringify(queue));
-  },
-
-  // Sync offline answers when online
-  syncOfflineAnswers: async () => {
-    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
-    const unsynced = queue.filter(item => !item.synced);
-
-    for (const item of unsynced) {
-      try {
-        await answerManager.updateAnswer(item.sessionId, item.questionId, item.answer);
-        item.synced = true;
-      } catch (error) {
-        console.error('Failed to sync offline answer:', error);
-      }
-    }
-
-    localStorage.setItem('offline_queue', JSON.stringify(queue));
-    return unsynced.length;
-  }
-};
-
-// Combine all API methods
-export const examApi = {
-  ...studentAuth,
-  ...examSession,
-  ...questionManager,
-  ...answerManager,
-  ...examSubmission,
-  ...timerSync,
-  ...proctoring,
-  ...connectionManager,
-  ...offlineManager
-};
-
-export default examApi;
+  useDeleteExamMutation,
+   useGetExamForEditQuery,
+  useGetExaminerCoursesQuery,
+  useUpdateExamMutation,
+  usePublishExamMutation,
+  useUnpublishExamMutation,
+  useCreateExamMutation
+  
+} = examApi;

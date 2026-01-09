@@ -18,7 +18,7 @@ const swaggerDocument = YAML.load(path.join(__dirname, './docs/swagger.yaml'));
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-
+const cookieParser = require('cookie-parser');
 
 //importing helmet and rate limiting 
 const helmet = require('helmet');
@@ -45,16 +45,16 @@ const examinerRoutes = require('@routes/examiner/examinerRoutes');
 const app = express();
 app.use(express.json()); // Middleware to parse incoming JSON requests
 app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded data
+app.use(cookieParser()); //Middleware to parse cookies 
 
-// Set up port
-const PORT = process.env.PORT || 5000;
+
 
 // CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins =
       process.env.NODE_ENV === "production"
-        ? ["https://your-production-site.com", "*"]
+        ? ["https://your-production-site.com",]
         : ["http://localhost:5173", "http://localhost:3000", "http://localhost:5000","*"]; // Development origins
 
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -66,9 +66,16 @@ const corsOptions = {
   methods: "GET,POST,PUT,DELETE,PATCH",
   //allowedHeaders: 'Content-Type,Authorization',  // Allow Authorization heade
   allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
+  credentials:true, //Allow cookies and credentials 
 };
 app.use(cors(corsOptions)); // Enable CORS
 // Serve static files from the uploads directory
+
+//Cookie support 
+app.use((req,res,next) =>{
+  req.header('Access-Control-Allow-Credentials','true');
+  next();
+})
 
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
@@ -139,7 +146,20 @@ app.use((req, res, next) => {
 });
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Set up port
+const PORT = process.env.PORT || 5000;
 // Start the server
+/*
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+*/
+app.listen(
+  PORT, '0.0.0.0',()=>{
+    console.log(`Server running on:`);
+    console.log(`  Local:   http://localhost:${PORT}`);
+    console.log(`  Network: http://192.168.56.1:${PORT}`);
+
+  }
+)

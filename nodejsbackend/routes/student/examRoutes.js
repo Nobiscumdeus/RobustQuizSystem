@@ -21,21 +21,8 @@ router.post('/session/:sessionId/violation', studentAuthenticate, studentOnly, s
 router.get('/session/:sessionId/answers', studentAuthenticate, studentOnly, studentExamController.getCurrentAnswers);
 router.get('/session/:sessionId/violations', studentAuthenticate, studentOnly, studentExamController.getViolations);
 
+
 module.exports = router;
-/*
-import express from 'express';
 
-import { createExam, getExamsByCourse } from '@controllers';
-
-const router = express.Router();
-
-router.post('/', createExam);
-router.get('/course/:courseId', getExamsByCourse);
-
-
-
-export default router;
-
-*/
 
 

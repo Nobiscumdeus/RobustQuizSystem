@@ -19,35 +19,178 @@ import {
   FileText,
   CheckCircle,
 } from "lucide-react";
-import axios from "axios";
-import { useSelector } from "react-redux";
+
 import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../utility/auth";
+//import { isAuthenticated } from "../utility/auth";
 import { Link } from "react-router-dom";
+import { useCurrentUser } from "@hooks/useAuth";
+import { useTheme } from "@hooks/useTheme";
+import { useProfile } from "@hooks/useProfile";
+import { toast } from "react-toastify";
 
 const UserProfile = () => {
-  const [userData, setUserData] = useState(null);
+ // const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  //const [loading, setLoading] = useState(true);
+  //const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeSection, setActiveSection] = useState("personal");
-  const [error, setError] = useState(null);
+  //const [error, setError] = useState(null);
+   const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-  const darkMode = useSelector((state) => state.darkMode.darkMode);
+
+  const {isAuthenticated, isLoading:authLoading} = useCurrentUser(); 
+
+  //const darkMode = useSelector((state) => state.darkMode.darkMode);
+  const { darkMode} = useTheme()
   //Authentication check
   const navigate = useNavigate();
-  useEffect(() => {
-    if (!isAuthenticated()) {
+
+
+  const {
+    userData,
+    isLoading:profileLoading,
+    error:profileError,
+    updateProfile,
+    changePassword,
+    uploadAvatar,
+    refetchProfile,
+    isUpdatingProfile,
+    isChangingPassword,
+    isUploadingAvatar
+  } = useProfile(); 
+
+  useEffect(()=>{
+    if(userData){
+      setEditedData(userData);
+    }
+  },[userData])
+
+    useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
       navigate("/login", {
-        state: { from: "/profile" },
+        state: { from: "/profile" , message:'Please login to view profile'},
         replace: true,
       });
     }
-  }, [navigate]);
+  }, [authLoading , isAuthenticated, navigate]);
 
-  useEffect(() => {
+  const handleSave = async () =>{
+    try{
+      const result = await updateProfile({
+        firstName:editedData.firstName,
+        lastName:editedData.lastName,
+        phone:editedData.phone,
+        avatarUrl:editedData.avatarUrl
+      });
+      if(result.success){
+        setIsEditing(false);
+        toast.success('Profile updated successfully');
+      }else{
+        toast.error(result.error || 'Failed to update profile')
+      }
+    }catch(error){
+        console.error("Error updating profile", error);
+      toast.error("Failed to update profile");
+    }
+  }
+
+
+  const handlePasswordChange = async (e) =>{
+    e.preventDefault();
+
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New passwords do not match!");
+      return;
+    }
+
+    try{
+      const result = await changePassword({
+        currentPassword:passwordData.currentPassword,
+        newPassword:passwordData.newPassword
+      });
+      if(result.success){
+        toast.success('Password changed successfully ');
+         setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }else{
+        toast.error(result.error || 'Failed to change password');
+      }
+    }catch(error){
+      console.error('Error changing password',error);
+      toast.error('Failed to change password');
+    }
+
+
+  }
+
+  
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert("Please select an image file");
+      return;
+    }
+    
+    try {
+      const result = await uploadAvatar(file);
+      if (result.success) {
+        alert("Profile picture updated!");
+        refetchProfile(); // Refresh profile data
+      } else {
+        alert(result.error || "Failed to upload avatar");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar", error);
+      alert("Failed to upload avatar");
+    }
+  };
+
+
+    const handleCancel = () => {
+    setEditedData({ ...userData });
+    setIsEditing(false);
+  };
+
+    const handleInputChange = (field, value) => {
+    setEditedData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+    const handlePasswordInputChange = (field, value) => {
+    setPasswordData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+  /*
+   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
       try {
@@ -72,7 +215,6 @@ const UserProfile = () => {
 
     fetchUserData();
   }, []);
-
   const handleSave = async () => {
     setSaving(true);
     const token = localStorage.getItem("token");
@@ -105,8 +247,7 @@ const UserProfile = () => {
       setSaving(false);
     }
   };
-
-  const handleCancel = () => {
+    const handleCancel = () => {
     setEditedData({ ...userData });
     setIsEditing(false);
   };
@@ -117,6 +258,9 @@ const UserProfile = () => {
       [field]: value,
     }));
   };
+  */
+
+
 
   const ProfileField = ({
     icon: Icon,
@@ -230,19 +374,19 @@ const UserProfile = () => {
   };
 
   // Loading state
-  if (loading) {
+  if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600">Checking authentication...</p>
         </div>
       </div>
     );
   }
 
   // Error state
-  if (error || !userData) {
+  if (profileError || !userData) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
@@ -254,8 +398,14 @@ const UserProfile = () => {
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
-            {error || "Failed to load profile"}
+            {profileError || "Failed to load profile"}
           </p>
+            <button 
+            onClick={() => refetchProfile()}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -416,6 +566,35 @@ const UserProfile = () => {
           : "bg-gradient-to-br from-blue-50 via-white to-purple-50"
       }`}
     >
+
+
+
+
+
+        {/*  TOP OF THE COMPONENT (outside main div) */}
+      <input 
+        type="file" 
+        id="avatar-upload"
+        className="hidden"
+        accept="image/*"
+        onChange={handleAvatarUpload}
+      />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Profile Header */}
         <div
@@ -433,6 +612,7 @@ const UserProfile = () => {
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
               {/* Avatar Section */}
+              {/*}
               <div className="relative group">
                 <img
                   src={
@@ -451,6 +631,36 @@ const UserProfile = () => {
                   </div>
                 )}
               </div>
+              */}
+               <div className="relative group">
+                <img
+                  src={
+                    userData.avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=4F46E5&color=fff&size=150`
+                  }
+                  alt="Profile"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
+                />
+                <label 
+                  htmlFor="avatar-upload"
+                  className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Camera className="w-8 h-8 text-white" />
+                  )}
+                </label>
+                {userData.isOnline && (
+                  <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                )}
+              </div>
+
+
+
+
 
               {/* User Info */}
               <div className="text-center md:text-left text-white flex-1">
@@ -481,6 +691,8 @@ const UserProfile = () => {
                 </div>
               </div>
 
+
+
               {/* Action Buttons */}
               <div className="flex flex-col space-x-3 space-y-2">
                 {!isEditing ? (
@@ -495,15 +707,16 @@ const UserProfile = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={handleSave}
-                      disabled={saving}
+                     // disabled={saving}
+                     disabled={isUpdatingProfile}
                       className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-600 transition-colors flex items-center space-x-2 shadow-lg disabled:opacity-50"
                     >
-                      {saving ? (
+                      {isUpdatingProfile ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <Save className="w-5 h-5" />
                       )}
-                      <span>{saving ? "Saving..." : "Save"}</span>
+                      <span>{isUpdatingProfile ? "Saving..." : "Save"}</span>
                     </button>
                     <button
                       onClick={handleCancel}
@@ -749,7 +962,11 @@ const UserProfile = () => {
                   >
                     Change Password
                   </h4>
-                  <div className="space-y-4">
+
+
+
+                  
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
@@ -779,6 +996,8 @@ const UserProfile = () => {
                     <input
                       type="password"
                       placeholder="New Password"
+                      value={ passwordData.newPassword}
+                      onChange ={ (e) =>handlePasswordInputChange('newPassword',e.target.value)}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         darkMode
                           ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
@@ -788,16 +1007,105 @@ const UserProfile = () => {
                     <input
                       type="password"
                       placeholder="Confirm New Password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e)=>handlePasswordInputChange('confirmPassword',e.target.value)}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         darkMode
                           ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                           : "border-gray-300"
                       }`}
                     />
-                    <button className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
-                      Update Password
+                    <button
+                    type="submit"
+                    disabled={isChangingPassword}
+
+                     className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                   {isChangingPassword ? "Updating..." : "Update Password"}
                     </button>
-                  </div>
+                  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  </form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  
                 </div>
 
                 <div

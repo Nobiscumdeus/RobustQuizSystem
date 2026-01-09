@@ -6,7 +6,7 @@ const dashboardDataController  = require('@controllers/admin/dashboardDataContro
 const router = express.Router();
 
 
-router.get('/api/dashboard-data',dashboardDataController.dashboardData);
+router.get('/dashboard-data',dashboardDataController.dashboardData);
 
 
 

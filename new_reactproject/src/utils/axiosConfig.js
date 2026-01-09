@@ -1,4 +1,64 @@
 import axios from 'axios';
+import { logout } from '../components/ChasfatAcademy/utility/auth';
+
+// ✅ KEEP student endpoints for redirect logic ONLY
+const studentEndpoints = [
+  '/exam/login',
+  '/exam/:id/start',
+  '/exam/:id/session',
+  '/exam/:id/questions',
+  '/exam/session/:sessionId/answer',
+  '/exam/session/:sessionId/answers/batch',
+  '/exam/session/:sessionId/submit',
+  '/exam/session/:sessionId/auto-submit',
+  '/exam/session/:sessionId/time',
+  '/exam/session/:sessionId/heartbeat',
+  '/exam/session/:sessionId/violation',
+  '/exam/session/:sessionId/answers',
+  '/exam/session/:sessionId/violations'
+];
+
+const apiClient = axios.create({
+  baseURL: '/api',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// ✅ Enable cookies for ALL requests
+apiClient.defaults.withCredentials = true;
+
+// ✅ REMOVE request interceptor (cookies handle auth)
+// NO Authorization headers needed
+
+// ✅ KEEP response interceptor with proper redirect logic
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // ✅ Check if it's a student route (for redirect only)
+      const isStudentRoute = studentEndpoints.some(endpoint => {
+        const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
+        return regex.test(error.config.url);
+      });
+      
+      if (isStudentRoute) {
+     
+        window.location.href = '/student/login';
+      } else {
+       
+        logout(true); // Redirects to admin login
+      }
+      return Promise.reject(error);
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
+/*
+import axios from 'axios';
 
 import { logout } from '../components/ChasfatAcademy/utility/auth';
 // Define student-specific endpoints
@@ -27,6 +87,9 @@ const apiClient = axios.create({
   },
 });
 
+apiClient.defaults.withCredentials = true;
+
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
@@ -50,11 +113,14 @@ apiClient.interceptors.request.use(
   }
 );
 
+
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+
+      
       const isStudentRoute = studentEndpoints.some(endpoint => {
         const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
         return regex.test(error.config.url);
@@ -65,6 +131,7 @@ apiClient.interceptors.response.use(
       } else {
         localStorage.removeItem('token');
         logout(true);
+        
       }
       return Promise.reject(error);
     }
@@ -73,3 +140,5 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+*/

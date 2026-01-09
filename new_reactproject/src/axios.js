@@ -1,7 +1,8 @@
 
 
 import axios from 'axios';
-import { logout } from './components/ChasfatAcademy/utility/auth';
+//import { logout } from './components/ChasfatAcademy/utility/auth';
+import { useAuthLogout } from './hooks/useAuth';
 
 // Define student-specific endpoints
 const studentEndpoints = [
@@ -29,21 +30,11 @@ const axiosInstance = axios.create({
   baseURL: 'http://localhost:5000',
 });
 
+//Using Cookies for all requests 
+axiosInstance.defaults.withCredentials = true;
+
 axiosInstance.interceptors.request.use(config => {
 
-  const studentToken = localStorage.getItem('studentToken');
-  
-  const userToken = localStorage.getItem('token');
-  // Check if the URL matches a student endpoint (using regex for dynamic params)
-  const isStudentRoute = studentEndpoints.some(endpoint => {
-    const regex = new RegExp('^' + endpoint.replace(/:[\w]+/g, '[^/]+') + '$');
-    return regex.test(config.url);
-  });
-  if (studentToken && isStudentRoute) {
-    config.headers.Authorization = `Bearer ${studentToken}`;
-  } else if (userToken) {
-    config.headers.Authorization = `Bearer ${userToken}`;
-  }
   return config;
 });
 
@@ -56,11 +47,13 @@ axiosInstance.interceptors.response.use(
         return regex.test(error.config.url);
       });
       if (isStudentRoute) {
-        localStorage.removeItem('studentToken');
+
+       // localStorage.removeItem('studentToken');
         window.location.href = '/student_exam_login';
       } else {
-        localStorage.removeItem('token');
-        logout(true); // For user/examiner routes
+       // localStorage.removeItem('token');
+       // logout(true); // For user/examiner routes
+        useAuthLogout();
       }
       return Promise.reject(error);
     }

@@ -854,3 +854,225 @@ exports.getExamAttendances = async (req, res) => {
     });
   }
 };
+
+
+// Add this new function to your examController.js
+exports.publishExam = async (req, res) => {
+  const { examId } = req.params;
+  const examinerId = req.user.userId;
+
+  console.log('📝 Attempting to publish exam:', { examId, examinerId });
+
+  try {
+    // Step 1: Verify exam exists and belongs to examiner
+    const exam = await prisma.exam.findFirst({
+      where: {
+        id: parseInt(examId),
+        examinerId: parseInt(examinerId)
+      },
+      include: {
+        examQuestions: {
+          include: {
+            question: true
+          }
+        },
+        course: true
+      }
+    });
+
+    if (!exam) {
+      console.log('❌ Exam not found or unauthorized');
+      return res.status(404).json({ 
+        success: false,
+        message: 'Exam not found or you do not have permission to publish it'
+      });
+    }
+
+    // Step 2: Check if already published
+    if (exam.isPublished) {
+      return res.status(400).json({
+        success: false,
+        message: 'Exam is already published'
+      });
+    }
+
+    // Step 3: Validation checks before publishing
+    const validationErrors = [];
+
+    // Check if exam has questions
+    if (exam.examQuestions.length === 0) {
+      validationErrors.push('Exam must have at least one question');
+    }
+
+    // Check if all questions are valid
+    const invalidQuestions = exam.examQuestions.filter(eq => !eq.question);
+    if (invalidQuestions.length > 0) {
+      validationErrors.push(`Found ${invalidQuestions.length} invalid questions`);
+    }
+
+    // Check required fields
+    const requiredFields = ['title', 'description', 'duration', 'courseId'];
+    for (const field of requiredFields) {
+      if (!exam[field]) {
+        validationErrors.push(`${field} is required`);
+      }
+    }
+
+    // Check if exam has a valid course
+    if (!exam.course) {
+      validationErrors.push('Exam must be associated with a valid course');
+    }
+
+    // Check start/end times if set
+    if (exam.startTime && exam.endTime) {
+      const startTime = new Date(exam.startTime);
+      const endTime = new Date(exam.endTime);
+      if (endTime <= startTime) {
+        validationErrors.push('End time must be after start time');
+      }
+      if (endTime <= new Date()) {
+        validationErrors.push('End time must be in the future');
+      }
+    }
+
+    // If validation errors exist, return them
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot publish exam due to validation errors',
+        errors: validationErrors
+      });
+    }
+
+    // Step 4: Calculate total points
+    const totalPoints = exam.examQuestions.reduce((sum, eq) => {
+      return sum + (eq.points || 1); // Default to 1 point if not set
+    }, 0);
+
+    // Step 5: Update exam with publish data
+    const updatedExam = await prisma.exam.update({
+      where: { id: parseInt(examId) },
+      data: {
+        isPublished: true,
+        publishedAt: new Date(),
+        state: 'PUBLISHED',
+        totalPoints: totalPoints,
+        lastUpdated: new Date()
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            code: true
+          }
+        },
+        examiner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        examQuestions: {
+          include: {
+            question: {
+              select: {
+                id: true,
+                questionText: true,
+                questionType: true,
+                points: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log('✅ Exam published successfully:', { 
+      examId, 
+      totalQuestions: exam.examQuestions.length,
+      totalPoints 
+    });
+
+    // Step 6: Return success response
+    res.status(200).json({
+      success: true,
+      message: 'Exam published successfully',
+      exam: {
+        id: updatedExam.id,
+        title: updatedExam.title,
+        isPublished: updatedExam.isPublished,
+        publishedAt: updatedExam.publishedAt,
+        state: updatedExam.state,
+        totalPoints: updatedExam.totalPoints,
+        totalQuestions: updatedExam.examQuestions.length,
+        course: updatedExam.course,
+        examiner: updatedExam.examiner
+      }
+    });
+
+  } catch (err) {
+    console.error('💥 Error publishing exam:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to publish exam',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Optional: Add an unpublish controller
+exports.unpublishExam = async (req, res) => {
+  const { examId } = req.params;
+  const examinerId = req.user.userId;
+
+  try {
+    // Check if exam exists and belongs to examiner
+    const exam = await prisma.exam.findFirst({
+      where: {
+        id: parseInt(examId),
+        examinerId: parseInt(examinerId)
+      }
+    });
+
+    if (!exam) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Exam not found'
+      });
+    }
+
+    // Check if already unpublished
+    if (!exam.isPublished) {
+      return res.status(400).json({
+        success: false,
+        message: 'Exam is already unpublished'
+      });
+    }
+
+    // Update exam
+    const updatedExam = await prisma.exam.update({
+      where: { id: parseInt(examId) },
+      data: {
+        isPublished: false,
+        state: 'DRAFT',
+        lastUpdated: new Date()
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Exam unpublished successfully',
+      exam: updatedExam
+    });
+
+  } catch (err) {
+    console.error('Error unpublishing exam:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unpublish exam'
+    });
+  }
+};

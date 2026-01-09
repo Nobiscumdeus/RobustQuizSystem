@@ -7,7 +7,7 @@ const { authenticate } = require('@middlewares/auth');
 const router = express.Router();
 
 
-router.get('/api/stats',authenticate,getUserStats);
+router.get('/stats',authenticate,getUserStats);
 
 
 

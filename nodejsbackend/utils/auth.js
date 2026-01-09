@@ -1,3 +1,52 @@
+const jwt = require('jsonwebtoken')
+require('dotenv').config()
+
+// Helper functions
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+    },
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { userId: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '2d' }
+  );
+};
+
+// Export as object
+const tokenUtils = {
+  generateAccessToken,
+  generateRefreshToken,
+  
+  // Verify refresh token
+  verifyRefreshToken: (token) => {
+    try {
+      return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
+  },
+
+  // Generate both tokens
+  generateTokens: (user) => {
+    return {
+      accessToken: generateAccessToken(user),  // ✅ Direct function call
+      refreshToken: generateRefreshToken(user)
+    };
+  }
+};
+
+module.exports = tokenUtils;
+/*
 const jwt=require('jsonwebtoken')
 require('dotenv').config()
 
@@ -5,6 +54,7 @@ require('dotenv').config()
 
 const tokenUtils = {
   // Generate access token
+  
   generateAccessToken: (user) => {
     return jwt.sign(
       {
@@ -16,6 +66,8 @@ const tokenUtils = {
       { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
     );
   },
+  
+ 
 
   // Generate refresh token
   generateRefreshToken: (user) => {
@@ -46,3 +98,5 @@ const tokenUtils = {
 };
 
 module.exports = tokenUtils;
+
+*/

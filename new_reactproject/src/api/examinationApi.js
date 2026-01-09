@@ -1,208 +1,206 @@
-// store/api/examApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const examinationApi = createApi({
   reducerPath: 'examinationApi',
- baseQuery: fetchBaseQuery({
-  baseUrl: 'http://localhost:5000/',
-  timeout:15000, //15 seconds timeout
-  prepareHeaders: (headers, { getState }) => {
-    const token = getState().studentAuth.token || localStorage.getItem('studentToken');
-     console.log("📤 Attaching token:", token ? token.slice(0, 25) + "..." : "❌ No token")
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`);
+  baseQuery: fetchBaseQuery({
+    baseUrl: 'http://localhost:5000',
+    credentials: 'include',
+    timeout: 15000,
+    prepareHeaders: (headers) => {
+      // Optional: Add any custom headers if needed
+      return headers;
     }
-    return headers;
-  }
-}),
+  }),
 
-  tagTypes: ['Student', 'AvailableExams', 'ExamSession', 'Answer', 'Questions'],
+  tagTypes: ['Student', 'ExamSession', 'Answers', 'Questions', 'Violations'],
+  
   endpoints: (builder) => ({
-    // Step 1: Student Login (matric number only)
+    // =========== AUTHENTICATION ===========
     studentLogin: builder.mutation({
-      query: (credentials) => ({
-        url: 'student/login',
+      query: ({ matricNo }) => ({
+        url: '/student/login',
         method: 'POST',
-        body: credentials // { matricNo }
+        body: { matricNo }
       }),
-    //  providesTags: ['Student', 'AvailableExams']
-    providesTags:(result,error,arg)=>[
-      { type:'Student',id:arg.matricNo},
-      { type:'AvaialableExams',id:'LIST'}
-    ]
+      providesTags: ['Student']
     }),
 
-    // Step 2: Validate Exam Access (exam password)
+    // =========== EXAM ACCESS ===========
     validateExamAccess: builder.mutation({
       query: ({ examId, password }) => ({
         url: `/student/exam/${examId}/validate`,
         method: 'POST',
         body: { password }
       }),
-     // providesTags: ['ExamSession']
-       providesTags: (result) => [
-        { type: 'ExamSession', id: result?.examSession?.id } // ← Specific session
+      providesTags: (result) => [
+        { type: 'ExamSession', id: result?.examSession?.id }
       ]
-
     }),
 
-
-
-
-    // Change from query to mutation
-   startExamSession: builder.mutation({
-  query: (sessionId) => ({
-    url: `session/${sessionId}/start`,
-    method: 'POST'
-  }),
-  //providesTags: ['ExamSession', 'Questions']
-    providesTags: (result, error, sessionId) => [
-        { type: 'ExamSession', id: sessionId }, // ← This specific session
-        { type: 'Questions', id: sessionId }    // ← Questions for this session
+    // =========== EXAM SESSION ===========
+    startExamSession: builder.mutation({
+      query: ({ sessionId }) => ({
+        url: `/session/${sessionId}/start`,
+        method: 'POST'
+      }),
+      providesTags: (result, error, { sessionId }) => [
+        { type: 'ExamSession', id: sessionId },
+        { type: 'Questions', id: sessionId }
       ]
-}),
+    }),
 
-    // Fetch Exam Session Status
     fetchExamSession: builder.query({
-      query: ({ examId }) => `exam/${examId}/session`,
-      method:'GET',
-    //  providesTags: ['ExamSession']
-     providesTags: (result, error, arg) => [
-        { type: 'Questions', id: arg.sessionId } // ← Questions for session 456
+      query: (sessionId) => `/exam/${sessionId}/session`,
+      providesTags: (result, error, sessionId) => [
+        { type: 'ExamSession', id: sessionId }
       ]
     }),
 
-    //Fetch Exam questions 
-    fetchExamQuestions:builder.query({
-      query:({ sessionId}) =>`session/${sessionId}/questions`,
-
+    // =========== QUESTIONS ===========
+    fetchExamQuestions: builder.query({
+      query: ({ sessionId, batch = 0, limit = 20 }) => ({
+        url: `/session/${sessionId}/questions`,
+        params: { batch, limit }
+      }),
+      providesTags: (result, error, { sessionId }) => [
+        { type: 'Questions', id: sessionId }
+      ]
     }),
 
-    // Fetch Questions in Batches
-    fetchQuestionBatch: builder.query({
-      query: ({ studentId, examId, batch }) => 
-        `${studentId}/questions?examId=${examId}&batch=${batch}`,
-      providesTags: ['Questions']
-    }),
-
-    // Answer Management
+    // =========== ANSWER MANAGEMENT ===========
     saveAnswer: builder.mutation({
       query: ({ sessionId, questionId, answer }) => ({
-        url: `session/${sessionId}/answer`,
+        url: `/session/${sessionId}/answer`,
         method: 'PUT',
         body: { questionId, answer }
       }),
-     //invalidatesTags: ['Answer']
-       invalidatesTags: (result, error, arg) => [
-        { type: 'Answer', id: arg.sessionId } // ← Answers for session 456
+      invalidatesTags: (result, error, { sessionId }) => [
+        { type: 'Answers', id: sessionId }
       ]
     }),
 
     saveAnswerBatch: builder.mutation({
       query: ({ sessionId, answers }) => ({
-        url: `session/${sessionId}/answers/batch`,
+        url: `/session/${sessionId}/answers/batch`,
         method: 'PUT',
         body: { answers }
       }),
-      invalidatesTags: ['Answer']
-    }),
-
-    // Get Current Answers
-    getCurrentAnswers: builder.query({
-      query: (sessionId) => `session/${sessionId}/answers`,
-     // providesTags: ['Answer']
-      providesTags: (result, error, sessionId) => [
-        { type: 'Answer', id: sessionId } // ← Answers for this specific session
+      invalidatesTags: (result, error, { sessionId }) => [
+        { type: 'Answers', id: sessionId }
       ]
     }),
 
-    // Exam Submission
+    getCurrentAnswers: builder.query({
+      query: (sessionId) => `/session/${sessionId}/answers`,
+      providesTags: (result, error, sessionId) => [
+        { type: 'Answers', id: sessionId }
+      ]
+    }),
+
+    // =========== EXAM SUBMISSION ===========
     submitExam: builder.mutation({
       query: (sessionId) => ({
-        url: `session/${sessionId}/submit`,
+        url: `/session/${sessionId}/submit`,
         method: 'POST'
       }),
-     // invalidatesTags: ['ExamSession', 'Answer']
-       invalidatesTags: (result, error, sessionId) => [
-        { type: 'ExamSession', id: sessionId },  // ← This session is done
-        { type: 'Answer', id: sessionId },        // ← Answers are finalized
-        { type: 'Questions', id: sessionId },     // ← Questions no longer needed
-        { type: 'AvailableExams', id: 'LIST' }    // ← Exam list might show new attempt count
+      invalidatesTags: () => [
+        'ExamSession',
+        'Answers',
+        'Questions'
       ]
     }),
 
-    // Auto Submit (when time expires)
     autoSubmitExam: builder.mutation({
       query: (sessionId) => ({
-        url: `session/${sessionId}/auto-submit`,
+        url: `/session/${sessionId}/auto-submit`,
         method: 'POST'
       }),
-   //  invalidatesTags: ['ExamSession', 'Answer']
-       invalidatesTags: (result, error, sessionId) => [
-        { type: 'ExamSession', id: sessionId },  // ← This session is done
-        { type: 'Answer', id: sessionId },        // ← Answers are finalized
-       
-      ]
+      invalidatesTags: ['ExamSession', 'Answers']
     }),
 
-    // Timer Sync
+    // =========== TIMER & SYNCHRONIZATION ===========
     syncTimer: builder.query({
-      query: (sessionId) => `session/${sessionId}/time`,
-      //providesTags: ['ExamSession']
-       invalidatesTags: (result, error, sessionId) => [
-        { type: 'ExamSession', id: sessionId },  // ← This session is done
-     
-       
-      ]
+      query: (sessionId) => `/session/${sessionId}/time`,
+      providesTags: ['ExamSession']
     }),
 
-    // Proctoring Features
+    // =========== PROCTORING ===========
     sendHeartbeat: builder.mutation({
-      query: ({ sessionId, clientTime }) => ({
-        url: `session/${sessionId}/heartbeat`,
+      query: ({ sessionId }) => ({
+        url: `/session/${sessionId}/heartbeat`,
         method: 'POST',
-        body: { clientTime }
+        body: { clientTime: new Date().toISOString() }
       })
     }),
 
     logViolation: builder.mutation({
       query: ({ sessionId, violationType, details }) => ({
-        url: `session/${sessionId}/violation`,
+        url: `/session/${sessionId}/violation`,
         method: 'POST',
         body: { violationType, details }
-      })
+      }),
+      invalidatesTags: ['Violations']
     }),
 
     getViolations: builder.query({
-      query: (sessionId) => `session/${sessionId}/violations`
-    })
+      query: (sessionId) => `/session/${sessionId}/violations`,
+      providesTags: ['Violations']
+    }),
+
+    getStudentResults: builder.query({
+  query: () => '/student/results',
+  providesTags: ['ExamResults']
+}),
+
+getExamResultDetails: builder.query({
+  query: (examId) => `/student/results/${examId}`,
+  providesTags: (result, error, examId) => [
+    { type: 'ExamResultDetails', id: examId }
+  ]
+}),
+
+getPerformanceStats: builder.query({
+  query: () => '/student/performance',
+  providesTags: ['PerformanceStats']
+}),
+
+
   })
+
 });
 
+// Export all hooks
 export const {
-  // Authentication Flow
+  // Authentication
   useStudentLoginMutation,
   useValidateExamAccessMutation,
   
   // Exam Session
   useStartExamSessionMutation,
   useFetchExamSessionQuery,
-  useFetchQuestionBatchQuery,
   
-  // Answer Management
+  // Questions
+  useFetchExamQuestionsQuery,
+  
+  // Answers
   useSaveAnswerMutation,
   useSaveAnswerBatchMutation,
   useGetCurrentAnswersQuery,
   
-  // Exam Completion
+  // Submission
   useSubmitExamMutation,
   useAutoSubmitExamMutation,
   
-  // Timer & Sync
+  // Timer
   useSyncTimerQuery,
   
   // Proctoring
   useSendHeartbeatMutation,
   useLogViolationMutation,
-  useGetViolationsQuery
+  useGetViolationsQuery,
+
+  //Results 
+  useGetStudentResultsQuery,
+  useGetExamResultDetailsQuery,
+  useGetPerformanceStatsQuery
 } = examinationApi;

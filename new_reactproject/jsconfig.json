@@ -1,0 +1,21 @@
+// jsconfig.json (for JavaScript projects) OR tsconfig.json (for TypeScript)
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@components/*": ["src/components/*"],
+      "@features/*": ["src/features/*"],
+      "@utilities/*": ["src/components/ChasfatAcademy/utility/*"],
+      "@shared/*": ["src/components/ChasfatAcademy/shared/*"],
+      "pages/*": ["src/components/ChasfatAcademy/pages/*"],
+      "@utils/*": ["src/utils/*"],
+      "@redux/*": ["src/redux/*"],
+      "@assets/*": ["src/assets/*"],
+    //  "@pages/*": ["src/pages/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

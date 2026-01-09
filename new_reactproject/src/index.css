@@ -1,29 +1,88 @@
+/* src/styles/base.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* ========== YOUR LIGHT THEME COLORS ========== */
+    --color-primary: 0 141 218;       /* #008DDA */
+    --color-secondary: 65 201 226;    /* #41C9E2 */
+    --color-accent: 172 226 225;      /* #ACE2E1 */
+    --color-background: 247 238 221;  /* #F7EEDD */
+    
+    /* Text colors */
+    --color-text: 31 41 55;           /* gray-900 */
+    --color-text-secondary: 75 85 99; /* gray-600 */
+    
+    /* Status colors (your choice or Tailwind defaults) */
+    --color-success: 16 185 129;      /* emerald-500 */
+    --color-warning: 245 158 11;      /* amber-500 */
+    --color-error: 239 68 68;         /* red-500 */
+    --color-info: 59 130 246;         /* blue-500 */
+    
+    /* Border */
+    --color-border: 229 231 235;      /* gray-200 */
 
 
-@layer base{
-  h1{
-    @apply m-3 font-bold text-lg uppercase;
+      --color-primary-hover: 0 120 190;     /* Darker blue for hover */
+    --color-surface-elevated: 255 255 255; /* White with shadow */
+    --color-text-primary: 31 41 55;       /* gray-900 */
+    --color-text-secondary: 75 85 99;     /* gray-600 */
+
+      /* Gradient for primary */
+    --gradient-primary: linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-secondary)) 100%);
   }
-  input{
-    @apply p-2 rounded-md w-full ring;
-  }
 
+  .dark {
+    /* ========== YOUR DARK THEME COLORS ========== */
+    --color-primary: 65 201 226;      /* #41C9E2 */
+    --color-secondary: 0 141 218;     /* #008DDA */
+    --color-accent: 14 116 144;       /* #0E7490 */
+    --color-background: 17 24 39;     /* gray-900 */
+    
+    /* Text colors */
+    --color-text: 249 250 251;        /* gray-50 */
+    --color-text-secondary: 209 213 219; /* gray-300 */
+    
+    /* Status colors for dark */
+    --color-success: 52 211 153;      /* emerald-400 */
+    --color-warning: 251 191 36;      /* amber-400 */
+    --color-error: 248 113 113;       /* red-400 */
+    --color-info: 96 165 250;         /* blue-400 */
+    
+    /* Border */
+    --color-border: 55 65 81;         /* gray-700 */
+
+     /* ADD THESE: */
+    --color-primary-hover: 85 221 246;     /* Lighter blue for hover */
+    --color-surface-elevated: 55 65 81;    /* gray-700 */
+    --color-text-primary: 249 250 251;     /* gray-50 */
+    --color-text-secondary: 209 213 219;   /* gray-300 */
+    
+    /* Gradient for dark mode */
+    --gradient-primary: linear-gradient(135deg, rgb(12 74 110) 0%, rgb(3 105 161) 100%);
+
+    
+  }
+  
+  /* Optional: Apply base body styles */
+  body {
+    @apply bg-background text-text;
+  }
 }
 
-@layer components{
-  button{
-    @apply p-2 rounded-md bg-blue-400 hover:bg-blue-200 m-2 ;
+@layer components {
+  /* Custom component classes using YOUR colors */
+  .status-online {
+    @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300;
   }
- 
-}
-
-.square:active{
-  background:#000;
-}
-.square:hover{
-  cursor:pointer;
+  
+  .status-offline {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
+  }
+  
+  .btn-danger {
+    @apply text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/30;
+  }
 }

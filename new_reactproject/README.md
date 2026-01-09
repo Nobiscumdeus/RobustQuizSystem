@@ -25,3 +25,8 @@ To run this project locally, follow these steps:
    ```bash
    git clone https://github.com/Nobiscumdeus/React.git
    cd quiz-app
+
+
+1. To delete actions folder cos we are using rtk already 
+2. To keep utils/axiosConfig alone later to avoid confusion 
+3. We would consider deleting the /api/examApi.js to avoid confusion since examinationApi.js already exists which is more modern 

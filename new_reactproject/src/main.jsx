@@ -3,6 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import  AppErrorBoundary  from '@components/ChasfatAcademy/errors/ErrorBoundary.jsx'
 //import { Provider } from 'react-redux'
 //import store from './store.js'
 
@@ -17,7 +18,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <App />
     </Provider> */}
     
-    <App />
+  
+    <AppErrorBoundary>
+        <App />
+
+    </AppErrorBoundary>
   
   </React.StrictMode>,
   
