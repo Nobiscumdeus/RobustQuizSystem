@@ -65,6 +65,8 @@ import AcceptableUsePolicy from "@components/ChasfatAcademy/pages/legal/Acceptab
 import CookiePolicy from "@components/ChasfatAcademy/pages/legal/CookiePolicy";
 import StudentResultsDashboard from "@components/ChasfatAcademy/pages/StudentResultDashboard";
 
+
+import ScrollToTop from "@components/ChasfatAcademy/utility/ScrollToTop";
 function App() {
 
   
@@ -75,6 +77,7 @@ function App() {
       <div className={`min-h-screen w-full antialiased`}>
         {/* 3. ROUTER: Routing context for navigation - inside Provider to access Redux */}
         <Router>
+          <ScrollToTop />
           {/* 4. NOTIFICATIONS: Toast container positioned above all content */}
           <ToastContainer
             position="top-right"

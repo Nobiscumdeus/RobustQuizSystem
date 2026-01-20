@@ -4,7 +4,7 @@ const {searchAll} =require('@controllers/shared/searchController');
 const { authenticate } = require('@middlewares/auth');
 
 const router = express.Router();
-router.get('/api/search/',authenticate,searchAll)
+router.get('/search/',authenticate,searchAll)
 
 
 
