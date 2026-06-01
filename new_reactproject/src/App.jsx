@@ -40,6 +40,7 @@ import RegisterStudentsForm from "./components/ChasfatAcademy/pages/admin/regist
 import CreateCourse from "./components/ChasfatAcademy/pages/admin/courses/CreateCourse";       // Course creation
 import CreateQuestionForm from "./components/ChasfatAcademy/pages/admin/questions/CreateQuestionForm"; // Question bank
 import AdminPanel from "./components/ChasfatAcademy/pages/AdminPanel";                         // Admin dashboard
+import ProctoringPage from "./components/ChasfatAcademy/pages/admin/ProctoringPage";          // Proctoring dashboard
 import ImageUploadQuestion from "./components/ChasfatAcademy/pages/ImageUploadQuestion";       // Upload images for questions
 
 // ================= CRUD OPERATION ROUTES =================
@@ -147,6 +148,7 @@ function RoutesWrapper() {
       <Route path="/exam" element={<ExamCreation />} />             {/* Create new exam */}
       <Route path="/create_question" element={<CreateQuestionForm />} />  {/* Add questions */}
       <Route path="/image_upload" element={<ImageUploadQuestion />} />    {/* Upload question images */}
+      <Route path="/proctoring" element={<ProctoringPage />} />           {/* Proctoring dashboard */}
       <Route path="/reports" element={<Reports />} />               {/* Analytics reports */}
       
       {/* ============ CRUD OPERATION ROUTES ============ */}

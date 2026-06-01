@@ -1,7 +1,63 @@
+const bcrypt = require('bcryptjs');
 const { prisma } = require('@database'); // Import prisma client
-const jwt = require('jsonwebtoken');
 
 
+
+const calculateAchievements = (examResults, averageScore) => {
+  let achievements = 0;
+
+  if (examResults.length > 0) achievements += 1;
+  if (examResults.some(result => result.percentage >= 100)) achievements += 1;
+  if (examResults.length >= 10) achievements += 1;
+  if (averageScore >= 90) achievements += 1;
+  if (examResults.filter(result => result.percentage >= 80).length >= 5) achievements += 1;
+
+  return achievements;
+};
+
+const calculateProfileStats = (user) => {
+  let stats = {};
+
+  if (user.role === 'student') {
+    const studentRecord = user.students[0];
+    if (studentRecord) {
+      const examResults = studentRecord.results;
+      const totalExams = examResults.length;
+      const completedExams = examResults.filter(r => r.status === 'COMPLETED').length;
+      const averageScore = examResults.length > 0
+        ? examResults.reduce((sum, result) => sum + result.percentage, 0) / examResults.length
+        : 0;
+
+      stats = {
+        examsCompleted: completedExams,
+        totalExams,
+        averageScore: Math.round(averageScore * 100) / 100,
+        coursesEnrolled: studentRecord.courses.length,
+        achievements: calculateAchievements(examResults, averageScore),
+        recentResults: examResults
+          .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+          .slice(0, 5)
+      };
+    }
+  } else if (user.role === 'examiner') {
+    const totalStudents = user.students.length;
+    const totalExams = user.exams.length;
+    const totalCourses = user.courses.length;
+    const totalResults = user.exams.reduce((sum, exam) => sum + exam.results.length, 0);
+
+    stats = {
+      studentsManaged: totalStudents,
+      examsCreated: totalExams,
+      coursesTeaching: totalCourses,
+      totalSubmissions: totalResults,
+      recentExams: user.exams
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+    };
+  }
+
+  return stats;
+};
 
 // Get Profile - Enhanced version
 const getProfile = async (req, res) => {
@@ -46,49 +102,7 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Calculate statistics based on user role
-    let stats = {};
-    
-    if (user.role === 'student') {
-      // For students - calculate their performance stats
-      const studentRecord = user.students[0]; // Assuming one student record per user
-      if (studentRecord) {
-        const examResults = studentRecord.results;
-        const totalExams = examResults.length;
-        const completedExams = examResults.filter(r => r.status === 'COMPLETED').length;
-        const averageScore = examResults.length > 0 
-          ? examResults.reduce((sum, result) => sum + result.percentage, 0) / examResults.length 
-          : 0;
-        const coursesEnrolled = studentRecord.courses.length;
-
-        stats = {
-          examsCompleted: completedExams,
-          totalExams: totalExams,
-          averageScore: Math.round(averageScore * 100) / 100,
-          coursesEnrolled: coursesEnrolled,
-          achievements: calculateAchievements(examResults, averageScore),
-          recentResults: examResults
-            .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
-            .slice(0, 5)
-        };
-      }
-    } else if (user.role === 'examiner') {
-      // For examiners - calculate their teaching stats
-      const totalStudents = user.students.length;
-      const totalExams = user.exams.length;
-      const totalCourses = user.courses.length;
-      const totalResults = user.exams.reduce((sum, exam) => sum + exam.results.length, 0);
-
-      stats = {
-        studentsManaged: totalStudents,
-        examsCreated: totalExams,
-        coursesTeaching: totalCourses,
-        totalSubmissions: totalResults,
-        recentExams: user.exams
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 5)
-      };
-    }
+    const stats = calculateProfileStats(user);
 
     // Enhanced user profile response
     const profileResponse = {
@@ -151,29 +165,6 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Helper function to calculate achievements
-const calculateAchievements = (examResults, averageScore) => {
-  let achievements = 0;
-  
-  // First quiz achievement
-  if (examResults.length > 0) achievements++;
-  
-  // Perfect score achievement
-  if (examResults.some(result => result.percentage >= 100)) achievements++;
-  
-  // Quick learner (10+ exams)
-  if (examResults.length >= 10) achievements++;
-  
-  // High performer (90+ average)
-  if (averageScore >= 90) achievements++;
-  
-  // Consistent performer (5+ exams with 80+ scores)
-  const highScores = examResults.filter(result => result.percentage >= 80);
-  if (highScores.length >= 5) achievements++;
-  
-  return achievements;
-};
-
 // Helper function to generate default avatar
 const generateDefaultAvatar = (firstName, lastName) => {
   const initials = `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -198,6 +189,44 @@ const calculateProfileCompletion = (user) => {
   
   const filledFields = fields.filter(field => field && field.trim() !== '').length;
   return Math.round((filledFields / fields.length) * 100);
+};
+
+const buildProfileStatsResponse = async (req, res) => {
+  const userId = req.user.userId;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      students: {
+        include: {
+          results: true,
+          courses: true
+        }
+      },
+      exams: {
+        include: {
+          results: true,
+          examQuestions: true,
+          course: true
+        }
+      },
+      courses: {
+        include: {
+          students: true,
+          exams: true
+        }
+      }
+    }
+  });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found.' });
+  }
+
+  return res.status(200).json({
+    success: true,
+    statsData: calculateProfileStats(user)
+  });
 };
 
 // Update Profile
@@ -233,10 +262,84 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    res.status(200).json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Error changing password: ', err);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while changing the password.',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const userId = req.user.userId;
+    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl,
+        updatedAt: new Date()
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: {
+        avatarUrl: updatedUser.avatarUrl
+      }
+    });
+  } catch (err) {
+    console.error('Error uploading avatar: ', err);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while uploading the avatar.',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
 
 
 
 module.exports={
    getProfile,
-  updateProfile
+  updateProfile,
+  changePassword,
+  uploadAvatar,
+  buildProfileStatsResponse
 }

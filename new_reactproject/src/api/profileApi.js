@@ -16,6 +16,7 @@ export const profileApi = createApi({
         method: 'GET',
       }),
       providesTags: ['Profile'],
+      transformResponse:(response)=>response.data, // return the profile object directly 
     }),
     
     // Update user profile
@@ -54,6 +55,7 @@ export const profileApi = createApi({
         url: '/profile/stats',
         method: 'GET',
       }),
+      transformResponse: (response) => response.statsData,
     }),
   }),
 });

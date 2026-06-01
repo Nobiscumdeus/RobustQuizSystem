@@ -245,7 +245,7 @@ const AboutPage = () => {
                 >
                   <div className="text-5xl mb-4">{member.avatar}</div>
                   <h4 className="text-2xl font-bold mb-2">{member.name}</h4>
-                  <p className="text-primary/90 font-semibold mb-3">{member.role}</p>
+                  <p className="text-blue-800 font-semibold mb-3">{member.role}</p>
                   <p className="text-white/80">{member.bio}</p>
                 </motion.div>
               ))}

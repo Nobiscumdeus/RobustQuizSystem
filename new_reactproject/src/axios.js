@@ -1,7 +1,5 @@
 
-
 import axios from 'axios';
-//import { logout } from './components/ChasfatAcademy/utility/auth';
 import { useAuthLogout } from './hooks/useAuth';
 
 // Define student-specific endpoints

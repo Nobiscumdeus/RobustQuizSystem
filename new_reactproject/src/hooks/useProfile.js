@@ -1,5 +1,5 @@
 import { useGetUserProfileQuery, useUpdateProfileMutation, useChangePasswordMutation, useUploadAvatarMutation, useGetUserStatsQuery } from '@api/profileApi';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 /**
  * Hook for managing user profile
@@ -16,7 +16,6 @@ export const useProfile = () => {
   // Get user stats
   const { 
     data: statsData, 
-    isLoading: statsLoading, 
     error: statsError 
   } = useGetUserStatsQuery(undefined, {
     skip: !profileData, // Only fetch stats if profile exists
@@ -36,10 +35,15 @@ export const useProfile = () => {
     setError(null);
     try {
       const result = await updateProfileMutation(profileData).unwrap();
-      return { success: true, data: result };
+      // API returns { success, data, message }
+      if (result && result.success) {
+        return { success: true, data: result.data };
+      }
+      return { success: false, error: result?.message || 'Failed to update profile' };
     } catch (err) {
-      setError(err.data?.message || 'Failed to update profile');
-      return { success: false, error: err.data?.message || 'Failed to update profile' };
+      const message = err?.data?.message || err?.message || 'Failed to update profile';
+      setError(message);
+      return { success: false, error: message };
     }
   };
 
@@ -50,10 +54,14 @@ export const useProfile = () => {
     setError(null);
     try {
       const result = await changePasswordMutation(passwordData).unwrap();
-      return { success: true, data: result };
+      if (result && result.success) {
+        return { success: true, message: result.message };
+      }
+      return { success: false, error: result?.message || 'Failed to change password' };
     } catch (err) {
-      setError(err.data?.message || 'Failed to change password');
-      return { success: false, error: err.data?.message || 'Failed to change password' };
+      const message = err?.data?.message || err?.message || 'Failed to change password';
+      setError(message);
+      return { success: false, error: message };
     }
   };
 
@@ -67,18 +75,26 @@ export const useProfile = () => {
     
     try {
       const result = await uploadAvatarMutation(formData).unwrap();
-      return { success: true, data: result };
+      if (result && result.success) {
+        return { success: true, data: result.data };
+      }
+      return { success: false, error: result?.message || 'Failed to upload avatar' };
     } catch (err) {
-      setError(err.data?.message || 'Failed to upload avatar');
-      return { success: false, error: err.data?.message || 'Failed to upload avatar' };
+      const message = err?.data?.message || err?.message || 'Failed to upload avatar';
+      setError(message);
+      return { success: false, error: message };
     }
   };
 
   // Combine stats with profile data
-  const userData = profileData ? {
-    ...profileData,
-    stats: statsData || {},
-  } : null;
+  const userData = useMemo(() => {
+    if (!profileData) return null;
+
+    return {
+      ...profileData,
+      stats: statsData || {},
+    };
+  }, [profileData, statsData]);
 
   return {
     // Data
@@ -86,7 +102,7 @@ export const useProfile = () => {
     stats: statsData,
     
     // Loading states
-    isLoading: profileLoading || statsLoading,
+    isLoading: profileLoading && !profileData,
     isUpdatingProfile: updatingProfile,
     isChangingPassword: changingPassword,
     isUploadingAvatar: uploadingAvatar,

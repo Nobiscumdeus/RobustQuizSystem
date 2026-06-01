@@ -8,13 +8,16 @@ import ExaminerExams from "./admin/exams/ExaminerExams";
 import ExaminerCourses from "./admin/courses/ExaminerCourses";
 import ExaminerStudents from "./admin/students/ExaminerStudents";
 
+import AdminAnalytics from "./admin/analytics/AdminAnalytics";
+
 import { useCurrentUser } from "../../../hooks/useAuth";
 import { useDashboard } from "../../../hooks/useDashboard";
+
 
 function AdminPanel() {
   const { darkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeframe, setTimeframe] = useState("week");
+  //const [timeframe, setTimeframe] = useState("week");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -305,6 +308,12 @@ function AdminPanel() {
             {activeTab === "students" && <ExaminerStudents />}
             {activeTab === "courses" && <ExaminerCourses />}
 
+
+            {activeTab ==="analytics" && <AdminAnalytics darkMode={darkMode} />}
+            
+            
+            
+            {/*}
             {activeTab === "analytics" && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
@@ -330,6 +339,13 @@ function AdminPanel() {
                 </div>
               </div>
             )}
+
+              */}
+
+
+
+
+
 
             {activeTab === "settings" && (
               <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-4`}>

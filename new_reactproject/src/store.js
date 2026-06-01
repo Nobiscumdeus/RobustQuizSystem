@@ -35,6 +35,8 @@ import { reportsApi } from "@api/reportsApi";
 import { courseApi } from "@api/courseApi";
 import { examApi } from "@api/examApi";
 import { studentApi } from "@api/studentApi";
+import {analyticsApi} from "@api/analyticsApi";
+
 // Student auth persistence
 const studentAuthPersistConfig = {
   key: "studentAuth",
@@ -87,7 +89,9 @@ const store = configureStore({
     //RTK Query for exam admin
     [examApi.reducerPath] : examApi.reducer,
     //RTK Query for student admin
-    [ studentApi.reducerPath] : studentApi.reducer
+    [ studentApi.reducerPath] : studentApi.reducer,
+    //RTK Query for analytics 
+    [analyticsApi.reducerPath] : analyticsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -98,7 +102,7 @@ const store = configureStore({
     .concat(dashboardApi.middleware).concat(profileApi.middleware)
     .concat(questionApi.middleware).concat(reportsApi.middleware)
     .concat(courseApi.middleware).concat(examApi.middleware)
-    .concat(studentApi.middleware),
+    .concat(studentApi.middleware).concat(analyticsApi.middleware),
 });
 
 export const persistor = persistStore(store);

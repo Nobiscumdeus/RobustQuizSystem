@@ -605,38 +605,18 @@ const UserProfile = () => {
           <div
             className={`bg-gradient-to-r ${
               darkMode
-                ? "from-gray-500 via-purple-600 to-gray-300"
-                : "from-blue-600 via-purple-600 to-indigo-700"
+                ? "from-[#006BA3] via-[#008DDA] to-[#41C9E2]"
+                : "from-[#008DDA] via-[#41C9E2] to-[#ACE2E1]"
             } px-8 py-12 relative`}
           >
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
               {/* Avatar Section */}
-              {/*}
               <div className="relative group">
                 <img
                   src={
                     userData.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=4F46E5&color=fff&size=150`
-                  }
-                  alt="Profile"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
-                />
-                <button className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="w-8 h-8 text-white" />
-                </button>
-                {userData.isOnline && (
-                  <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                )}
-              </div>
-              */}
-               <div className="relative group">
-                <img
-                  src={
-                    userData.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=4F46E5&color=fff&size=150`
+                    `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=008DDA&color=fff&size=150`
                   }
                   alt="Profile"
                   className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
@@ -658,23 +638,19 @@ const UserProfile = () => {
                 )}
               </div>
 
-
-
-
-
               {/* User Info */}
               <div className="text-center md:text-left text-white flex-1">
                 <h1 className="text-4xl font-bold mb-2">
                   {userData.firstName} {userData.lastName}
                 </h1>
-                <p className="text-blue-100 text-xl mb-1">
+                <p className="text-white/90 text-xl mb-1">
                   {userData.role === "student"
                     ? `${userData.studentInfo?.department || "Student"} • ${
                         userData.studentInfo?.level || ""
                       }`
                     : "Examiner"}
                 </p>
-                <p className="text-blue-200 mb-4">@{userData.username}</p>
+                <p className="text-white/80 mb-4">@{userData.username}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
                   {userData.role === "student" &&
                     userData.studentInfo?.matricNo && (
@@ -683,32 +659,26 @@ const UserProfile = () => {
                       </span>
                     )}
                   <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-                    Member since {new Date(userData.memberSince).getFullYear()}
-                  </span>
-                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-                    Profile {userData.profileCompletion}% complete
+                    Member since {new Date(userData.createdAt).getFullYear()}
                   </span>
                 </div>
               </div>
 
-
-
               {/* Action Buttons */}
-              <div className="flex flex-col space-x-3 space-y-2">
+              <div className="flex flex-col gap-2">
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center space-x-2 shadow-lg"
+                    className="bg-white text-[#008DDA] px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center space-x-2 shadow-lg"
                   >
                     <Edit3 className="w-5 h-5" />
                     <span>Edit Profile</span>
                   </button>
                 ) : (
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col gap-2">
                     <button
                       onClick={handleSave}
-                     // disabled={saving}
-                     disabled={isUpdatingProfile}
+                      disabled={isUpdatingProfile}
                       className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-600 transition-colors flex items-center space-x-2 shadow-lg disabled:opacity-50"
                     >
                       {isUpdatingProfile ? (
@@ -727,27 +697,33 @@ const UserProfile = () => {
                     </button>
                   </div>
                 )}
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/admin_panel"
-                    title="Back"
-                    className={`
-      px-4 py-2 rounded-md 
-      ${
-        darkMode
-          ? "bg-white rounded-md text-blue-500 "
-          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-      }
-      transition-colors duration-200
-    `}
-                  >
-                    Back
-                  </Link>
-                </div>
+                <Link
+                  to="/admin_panel"
+                  title="Back"
+                  className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/30 transition-colors text-center"
+                >
+                  Back
+                </Link>
               </div>
             </div>
           </div>
         </div>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -776,8 +752,8 @@ const UserProfile = () => {
             <nav
               className={`flex space-x-8 px-6 ${
                 darkMode
-                  ? " bg-gradient-to-br from-purple-900 via-gray-500 to-gray-300"
-                  : " bg-gradient-to-br from-blue-50 via-white to-purple-50"
+                  ? "bg-gradient-to-r from-[#006BA3] to-[#008DDA]"
+                  : "bg-gradient-to-r from-[#008DDA] to-[#41C9E2]"
               }`}
             >
               {[
@@ -790,7 +766,7 @@ const UserProfile = () => {
                   onClick={() => setActiveSection(id)}
                   className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
                     activeSection === id
-                      ? "border-blue-500 text-blue-600"
+                      ? "border-white text-white"
                       : darkMode
                       ? "border-transparent text-gray-300 hover:text-gray-200 hover:border-gray-600"
                       : "border-transparent text-gray-600 hover:text-gray-700 hover:border-gray-300"

@@ -38,7 +38,7 @@ const dashboardDataRoutes = require('@routes/admin/dashboardDataRoutes');
 const reportRoutes = require('@routes/admin/reportRoutes');
 const examRoutes = require('@routes/student/examRoutes');
 const examinerRoutes = require('@routes/examiner/examinerRoutes');
-
+const analyticsRoutes = require('@routes/admin/analyticsRoutes');
 
 
 // Initialize the app
@@ -114,6 +114,9 @@ app.use(reportRoutes)
 
 //Exam routes
 app.use(examRoutes)
+
+//Analytics routes
+app.use(analyticsRoutes)
 
 //helmet newly added for security 
 app.use(helmet())

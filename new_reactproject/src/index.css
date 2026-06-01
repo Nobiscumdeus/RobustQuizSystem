@@ -6,10 +6,14 @@
 @layer base {
   :root {
     /* ========== YOUR LIGHT THEME COLORS ========== */
-    --color-primary: 0 141 218;       /* #008DDA */
+          /* #008DDA */
+    /*
+       
+     */
+    --color-primary: 10 130 218;     /* #008DDA */
     --color-secondary: 65 201 226;    /* #41C9E2 */
-    --color-accent: 172 226 225;      /* #ACE2E1 */
-    --color-background: 247 238 221;  /* #F7EEDD */
+    --color-accent: 172 226 225;    /* #ACE2E1 */
+    --color-background: 230 238 221;  /* #F7EEDD */
     
     /* Text colors */
     --color-text: 31 41 55;           /* gray-900 */
@@ -27,9 +31,9 @@
 
       --color-primary-hover: 0 120 190;     /* Darker blue for hover */
     --color-surface-elevated: 255 255 255; /* White with shadow */
-    --color-text-primary: 31 41 55;       /* gray-900 */
+    --color-text-primary: 30 41 55;       /* gray-900 */
     --color-text-secondary: 75 85 99;     /* gray-600 */
-
+    --color-text-bluish: 30, 64, 175;        /* bluish for secondary text */
       /* Gradient for primary */
     --gradient-primary: linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-secondary)) 100%);
   }
@@ -59,7 +63,7 @@
     --color-surface-elevated: 55 65 81;    /* gray-700 */
     --color-text-primary: 249 250 251;     /* gray-50 */
     --color-text-secondary: 209 213 219;   /* gray-300 */
-    
+    --color-text-bluish: 85, 221, 246;        /* Lighter bluish for secondary text */
     /* Gradient for dark mode */
     --gradient-primary: linear-gradient(135deg, rgb(12 74 110) 0%, rgb(3 105 161) 100%);
 

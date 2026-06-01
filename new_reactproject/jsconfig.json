@@ -9,12 +9,15 @@
       "@features/*": ["src/features/*"],
       "@utilities/*": ["src/components/ChasfatAcademy/utility/*"],
       "@shared/*": ["src/components/ChasfatAcademy/shared/*"],
-      "pages/*": ["src/components/ChasfatAcademy/pages/*"],
+      "@pages/*": ["src/components/ChasfatAcademy/pages/*"],
       "@utils/*": ["src/utils/*"],
       "@redux/*": ["src/redux/*"],
       "@assets/*": ["src/assets/*"],
-    //  "@pages/*": ["src/pages/*"]
+      "@services/*": ["src/services/*"],
+      "@types/*": ["src/types/*"]
     }
+    ,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -35,23 +35,3 @@ export const useTheme =() =>{
 
 
 }
-
-
-/*
-// hooks/useTheme.js - Make sure it looks like this:
-import { useSelector } from 'react-redux';
-
-export const useTheme = () => {
-  // CORRECT PATH: state.ui?.displayMode
-  const displayMode = useSelector((state) => state.ui?.displayMode || 'light');
-  const isDarkMode = displayMode === 'dark';
-  
-  return {
-    displayMode,      // "light" or "dark"
-    isDarkMode,       // true or false
-    darkMode: isDarkMode, // Alias if needed
-    themeClass: isDarkMode ? 'dark' : 'light'
-  };
-};
-
-*/
