@@ -1,6 +1,4 @@
-Sure! Here's the full `README.md` content in **Markdown format** that you can copy directly into your `README.md` file:
 
-````markdown
 # 🧠 Chasfat Academy – Quiz Application
 
 Welcome to the **Chasfat Academy Quiz Platform**, a modern web-based application designed to facilitate quiz and exam creation, student registration, and result analysis. Built with a powerful **React + Redux** frontend and a scalable **Node.js + Prisma + PostgreSQL** backend.
@@ -216,11 +214,7 @@ This project is licensed under the MIT License.
 
 ## 👥 Team & Credits
 
-Maintained by the **Chasfat Academy Dev Team**.
+Maintained by the **Chasfat Projects Dev Team**.
 
 Special thanks to all contributors and testers involved in early builds.
 
-```
-
-Let me know if you want a split version (`README.md` for frontend and backend separately) or if you'd like to include any deployment instructions (e.g., Vercel, Netlify, Railway, Docker, etc.).
-```
