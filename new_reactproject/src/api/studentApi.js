@@ -10,7 +10,7 @@ export const studentApi = createApi({
   endpoints: (builder) => ({
     // Get students by examiner
     getExaminerStudents: builder.query({
-      query: (examinerId) => `/ students/${examinerId}`,
+      query: (examinerId) => `/students/${examinerId}`,
       providesTags: ['Student'],
     }),
     
@@ -76,7 +76,7 @@ export const studentApi = createApi({
       invalidatesTags: ['Student', 'CourseStudent'],
     }),
 
-    // Add this to your studentApi.js endpoints
+    
 getStudentWithDetails: builder.query({
   query: (studentId) => `/student/${studentId}`,
   providesTags: (result, error, studentId) => [
@@ -84,7 +84,7 @@ getStudentWithDetails: builder.query({
     'CourseStudent'
   ],
 }),
-// Add this to your studentApi.js endpoints
+
 getStudentForEdit: builder.query({
   query: (studentId) => `/student/${studentId}/edit`,
   providesTags: (result, error, studentId) => [{ type: 'Student', id: studentId }],

@@ -11,7 +11,7 @@ export const questionApi = createApi({
     // Create question
     createQuestion: builder.mutation({
       query: (questionData) => ({
-        url: '/api/questions',
+        url: '/questions',
         method: 'POST',
         body: questionData,
       }),
@@ -20,32 +20,32 @@ export const questionApi = createApi({
     
     // Get questions by course ID
     getCourseQuestions: builder.query({
-      query: (courseId) => `/api/courses/${courseId}/questions`,
+      query: (courseId) => `/courses/${courseId}/questions`,
       providesTags: ['CourseQuestion'],
     }),
     
     // Get questions by exam
     getQuestionsByExam: builder.query({
-      query: (examId) => `/api/exams/${examId}/questions`,
+      query: (examId) => `/exams/${examId}/questions`,
       providesTags: ['ExamQuestion'],
     }),
     
     // Get courses and exams for examiner
     getCoursesAndExams: builder.query({
-      query: (examinerId) => `/api/examiners/${examinerId}/courses-exams`,
+      query: (examinerId) => `/examiners/${examinerId}/courses-exams`,
       providesTags: ['CourseQuestion', 'ExamQuestion'],
     }),
     
     // Get single question
     getQuestionById: builder.query({
-      query: (questionId) => `/api/questions/${questionId}`,
+      query: (questionId) => `/questions/${questionId}`,
       providesTags: (result, error, questionId) => [{ type: 'Question', id: questionId }],
     }),
     
     // Update question
     updateQuestion: builder.mutation({
       query: ({ questionId, ...data }) => ({
-        url: `/api/questions/${questionId}`,
+        url: `/questions/${questionId}`,
         method: 'PUT',
         body: data,
       }),
@@ -57,7 +57,7 @@ export const questionApi = createApi({
     // Delete question
     deleteQuestion: builder.mutation({
       query: (questionId) => ({
-        url: `/api/questions/${questionId}`,
+        url: `/questions/${questionId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Question', 'CourseQuestion'],
@@ -77,7 +77,7 @@ uploadImage: builder.mutation({
 }),
 
 getExaminerExams: builder.query({
-  query: (examinerId) => `/api/examiners/${examinerId}/exams`,
+  query: (examinerId) => `/examiners/${examinerId}/exams`,
   providesTags: ['Exam'],
 }),
 

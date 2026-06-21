@@ -187,7 +187,7 @@ const getCourseQuestions = async (req, res) => {
 };
 
 // 3. ADD QUESTIONS TO EXAM (Assemble from Question Bank)
-const addQuestionsToExam = async (req, res) => {
+const addQuestionsToExams = async (req, res) => {
   try {
     const { examId } = req.params;
     const { questionIds, autoSelect } = req.body;
@@ -453,6 +453,86 @@ const getAnswersByQuestion = async (req, res) => {
   }
 };
 
+
+
+
+
+const addQuestionsToExam = async (req, res) => {
+  try {
+    const { examId, questionIds } = req.body;
+
+    if (!examId || !questionIds || !Array.isArray(questionIds)) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['examId', 'questionIds (array)']
+      });
+    }
+
+    const examIdInt = parseInt(examId);
+
+    // Verify exam exists
+    const exam = await prisma.exam.findUnique({
+      where: { id: examIdInt },
+      include: { course: true }
+    });
+
+    if (!exam) {
+      return res.status(400).json({ error: 'Exam not found' });
+    }
+
+    // Verify all questions belong to the same course as the exam
+    const questions = await prisma.question.findMany({
+      where: {
+        id: { in: questionIds.map(id => parseInt(id)) },
+        courseId: exam.courseId
+      }
+    });
+
+    if (questions.length !== questionIds.length) {
+      return res.status(400).json({ 
+        error: 'Some questions not found or don\'t belong to this course' 
+      });
+    }
+
+    // Get current max order for this exam
+    const maxOrder = await prisma.examQuestion.findFirst({
+      where: { examId: examIdInt },
+      orderBy: { order: 'desc' }
+    });
+
+    const startOrder = maxOrder ? maxOrder.order + 1 : 1;
+
+    // Create exam-question relationships
+    const examQuestions = await prisma.examQuestion.createMany({
+      data: questionIds.map((questionId, index) => ({
+        examId: examIdInt,
+        questionId: parseInt(questionId),
+        order: startOrder + index,
+        points: 1.0
+      })),
+      skipDuplicates: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `${examQuestions.count} questions added to exam`,
+      data: {
+        examId: examIdInt,
+        questionsAdded: examQuestions.count
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error adding questions to exam:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+};
+
+
+
 /*
 
 const createQuestion = async (req, res) => {
@@ -565,79 +645,7 @@ const createQuestion = async (req, res) => {
 
 
 // ✅ NEW: Controller to add questions from course bank to specific exam
-const addQuestionsToExam = async (req, res) => {
-  try {
-    const { examId, questionIds } = req.body;
 
-    if (!examId || !questionIds || !Array.isArray(questionIds)) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['examId', 'questionIds (array)']
-      });
-    }
-
-    const examIdInt = parseInt(examId);
-
-    // Verify exam exists
-    const exam = await prisma.exam.findUnique({
-      where: { id: examIdInt },
-      include: { course: true }
-    });
-
-    if (!exam) {
-      return res.status(400).json({ error: 'Exam not found' });
-    }
-
-    // Verify all questions belong to the same course as the exam
-    const questions = await prisma.question.findMany({
-      where: {
-        id: { in: questionIds.map(id => parseInt(id)) },
-        courseId: exam.courseId
-      }
-    });
-
-    if (questions.length !== questionIds.length) {
-      return res.status(400).json({ 
-        error: 'Some questions not found or don\'t belong to this course' 
-      });
-    }
-
-    // Get current max order for this exam
-    const maxOrder = await prisma.examQuestion.findFirst({
-      where: { examId: examIdInt },
-      orderBy: { order: 'desc' }
-    });
-
-    const startOrder = maxOrder ? maxOrder.order + 1 : 1;
-
-    // Create exam-question relationships
-    const examQuestions = await prisma.examQuestion.createMany({
-      data: questionIds.map((questionId, index) => ({
-        examId: examIdInt,
-        questionId: parseInt(questionId),
-        order: startOrder + index,
-        points: 1.0
-      })),
-      skipDuplicates: true
-    });
-
-    res.status(201).json({
-      success: true,
-      message: `${examQuestions.count} questions added to exam`,
-      data: {
-        examId: examIdInt,
-        questionsAdded: examQuestions.count
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error adding questions to exam:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      details: error.message
-    });
-  }
-};
 
 // ✅ NEW: Get all questions from a course (question bank)
 const getCourseQuestions = async (req, res) => {

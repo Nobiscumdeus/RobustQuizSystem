@@ -501,15 +501,54 @@ exports.removeStudentFromExam = async (req, res) => {
 
 exports.addQuestionToExam = async (req, res) => {
   const { examId } = req.params;
-  const { questionId, points,order } = req.body;
+  const { questionId, points, order } = req.body;
   const examinerId = req.user.userId;
 
+  console.log('========== ADD QUESTION TO EXAM START ==========');
+  console.log('Request params:', { examId });
+  console.log('Request body:', { questionId, points, order });
+  console.log('Examiner ID:', examinerId);
+  console.log('================================================');
+
   try {
-    // Verify exam ownership and that it's not published
+    // Step 1: Parse IDs
+    console.log('Step 1: Parsing IDs...');
+    const parsedExamId = parseInt(examId);
+    const parsedQuestionId = parseInt(questionId);
+    const parsedExaminerId = parseInt(examinerId);
+    
+    console.log('Parsed IDs:', { 
+      parsedExamId, 
+      parsedQuestionId, 
+      parsedExaminerId,
+      isExamIdNaN: isNaN(parsedExamId),
+      isQuestionIdNaN: isNaN(parsedQuestionId),
+      isExaminerIdNaN: isNaN(parsedExaminerId)
+    });
+
+    if (isNaN(parsedExamId) || isNaN(parsedQuestionId) || isNaN(parsedExaminerId)) {
+      console.error('❌ Invalid ID format detected!');
+      return res.status(400).json({
+        message: 'Invalid ID format',
+        details: {
+          examId: isNaN(parsedExamId) ? 'Invalid exam ID' : 'Valid',
+          questionId: isNaN(parsedQuestionId) ? 'Invalid question ID' : 'Valid',
+          examinerId: isNaN(parsedExaminerId) ? 'Invalid examiner ID' : 'Valid'
+        }
+      });
+    }
+
+    // Step 2: Verify exam ownership
+    console.log('Step 2: Verifying exam ownership...');
+    console.log('Querying exam with:', { 
+      id: parsedExamId, 
+      examinerId: parsedExaminerId 
+    });
+
     const exam = await prisma.exam.findUnique({
       where: {
-        id: parseInt(examId),
-        examinerId: parseInt(examinerId)
+        id: parsedExamId,
+        examinerId: parsedExaminerId
       },
       select: {
         id: true,
@@ -519,22 +558,36 @@ exports.addQuestionToExam = async (req, res) => {
       }
     });
 
+    console.log('Exam query result:', exam);
+
     if (!exam) {
+      console.log('❌ Exam not found or unauthorized');
       return res.status(404).json({
         message: 'Exam not found or you do not have permission to access it'
       });
     }
 
+    console.log('✅ Exam found:', exam.title);
+
     if (exam.isPublished) {
+      console.log('❌ Exam is published, cannot modify');
       return res.status(400).json({
         message: 'Cannot modify questions in a published exam'
       });
     }
 
-    // Verify question belongs to the same course
+    console.log('✅ Exam is not published');
+
+    // Step 3: Verify question belongs to the same course
+    console.log('Step 3: Verifying question belongs to course...');
+    console.log('Looking for question with:', { 
+      id: parsedQuestionId, 
+      courseId: exam.courseId 
+    });
+
     const question = await prisma.question.findUnique({
       where: {
-        id: parseInt(questionId),
+        id: parsedQuestionId,
         courseId: exam.courseId
       },
       select: {
@@ -544,37 +597,86 @@ exports.addQuestionToExam = async (req, res) => {
       }
     });
 
+    console.log('Question query result:', question);
+
     if (!question) {
+      console.log('❌ Question not found or does not belong to this course');
       return res.status(404).json({
         message: 'Question not found or does not belong to this course'
       });
     }
 
-    // Check if question is already added to this exam
+    console.log('✅ Question found:', question.questionText);
+
+    // Step 4: Check if question is already added
+    console.log('Step 4: Checking for existing exam-question relationship...');
+    console.log('Checking with:', { 
+      examId: parsedExamId, 
+      questionId: parsedQuestionId 
+    });
+
     const existingExamQuestion = await prisma.examQuestion.findUnique({
       where: {
         examId_questionId: {
-          examId: parseInt(examId),
-          questionId: parseInt(questionId)
+          examId: parsedExamId,
+          questionId: parsedQuestionId
         }
       }
     });
 
+    console.log('Existing exam question check:', existingExamQuestion);
+
     if (existingExamQuestion) {
+      console.log('❌ Question already added to this exam');
       return res.status(400).json({
         message: 'Question is already added to this exam'
       });
     }
 
-    // Add question to exam
-    const examQuestion = await prisma.examQuestion.create({
-      data: {
-        examId: parseInt(examId),
-        questionId: parseInt(questionId),
-        points: points || question.points ,// Use custom points or default from question
-        order: order || await getNextQuestionOrder(examId)
+    console.log('✅ Question not already in exam');
 
-      },
+    // Step 5: Get next order
+    console.log('Step 5: Getting next order...');
+    let nextOrder = order;
+    
+    if (!nextOrder) {
+      console.log('No order provided, calculating next order...');
+      try {
+        const lastQuestion = await prisma.examQuestion.findFirst({
+          where: { 
+            examId: parsedExamId 
+          },
+          orderBy: { 
+            order: 'desc' 
+          },
+          select: { 
+            order: true 
+          }
+        });
+        
+        nextOrder = lastQuestion ? lastQuestion.order + 1 : 0;
+        console.log('Calculated next order:', nextOrder);
+      } catch (orderError) {
+        console.error('❌ Error calculating next order:', orderError);
+        throw new Error(`Failed to calculate next order: ${orderError.message}`);
+      }
+    } else {
+      console.log('Using provided order:', nextOrder);
+    }
+
+    // Step 6: Create exam question
+    console.log('Step 6: Creating exam question...');
+    const createData = {
+      examId: parsedExamId,
+      questionId: parsedQuestionId,
+      points: points || question.points,
+      order: nextOrder
+    };
+    
+    console.log('Create data:', createData);
+
+    const examQuestion = await prisma.examQuestion.create({
+      data: createData,
       include: {
         question: {
           select: {
@@ -590,6 +692,8 @@ exports.addQuestionToExam = async (req, res) => {
       }
     });
 
+    console.log('✅ Exam question created successfully:', examQuestion);
+
     res.status(201).json({
       message: 'Question added to exam successfully',
       examQuestion,
@@ -599,14 +703,84 @@ exports.addQuestionToExam = async (req, res) => {
       }
     });
 
+    console.log('========== ADD QUESTION TO EXAM SUCCESS ==========');
+
   } catch (err) {
-    console.error(err);
+    console.error('========== ERROR IN ADD QUESTION TO EXAM ==========');
+    console.error('Error Name:', err.name);
+    console.error('Error Message:', err.message);
+    console.error('Error Stack:', err.stack);
+    console.error('Error Code:', err.code);
+    console.error('Error Meta:', err.meta);
+    console.error('Full Error Object:', JSON.stringify(err, null, 2));
+    console.error('====================================================');
+    
+    // Specific Prisma error handling
+    if (err.code === 'P2002') {
+      console.error('❌ Unique constraint violation (duplicate entry)');
+      return res.status(400).json({
+        message: 'Question already exists in this exam',
+        error: 'Unique constraint violation'
+      });
+    }
+    
+    if (err.code === 'P2003') {
+      console.error('❌ Foreign key constraint failed');
+      console.error('Foreign key details:', err.meta);
+      return res.status(400).json({
+        message: 'Invalid exam or question ID',
+        error: 'Foreign key constraint failed',
+        details: err.meta
+      });
+    }
+
+    if (err.code === 'P2025') {
+      console.error('❌ Record not found for operation');
+      return res.status(404).json({
+        message: 'Record not found',
+        error: err.message
+      });
+    }
+
     res.status(500).json({
       message: 'Failed to add question to exam',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      code: err.code,
+      meta: process.env.NODE_ENV === 'development' ? err.meta : undefined
     });
   }
 };
+
+
+
+
+
+
+
+// Helper function (add this outside the main function)
+async function getNextQuestionOrder(examId) {
+  console.log('getNextQuestionOrder called with examId:', examId);
+  const lastQuestion = await prisma.examQuestion.findFirst({
+    where: { examId: parseInt(examId) },
+    orderBy: { order: 'desc' },
+    select: { order: true }
+  });
+  const nextOrder = lastQuestion ? lastQuestion.order + 1 : 0;
+  console.log('Next order determined:', nextOrder);
+  return nextOrder;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 exports.removeQuestionFromExam = async (req, res) => {
@@ -855,8 +1029,6 @@ exports.getExamAttendances = async (req, res) => {
   }
 };
 
-
-// Add this new function to your examController.js
 exports.publishExam = async (req, res) => {
   const { examId } = req.params;
   const examinerId = req.user.userId;
@@ -911,7 +1083,7 @@ exports.publishExam = async (req, res) => {
     }
 
     // Check required fields
-    const requiredFields = ['title', 'description', 'duration', 'courseId'];
+    const requiredFields = ['title', 'duration', 'courseId'];
     for (const field of requiredFields) {
       if (!exam[field]) {
         validationErrors.push(`${field} is required`);
@@ -946,18 +1118,17 @@ exports.publishExam = async (req, res) => {
 
     // Step 4: Calculate total points
     const totalPoints = exam.examQuestions.reduce((sum, eq) => {
-      return sum + (eq.points || 1); // Default to 1 point if not set
+      return sum + (eq.points || 1);
     }, 0);
 
-    // Step 5: Update exam with publish data
+    // Step 5: Update exam with publish data - REMOVED invalid fields
     const updatedExam = await prisma.exam.update({
       where: { id: parseInt(examId) },
       data: {
         isPublished: true,
         publishedAt: new Date(),
-        state: 'PUBLISHED',
-        totalPoints: totalPoints,
-        lastUpdated: new Date()
+        state: 'PUBLISHED'
+        // REMOVED: totalPoints, lastUpdated - these don't exist in schema
       },
       include: {
         course: {
@@ -1006,7 +1177,6 @@ exports.publishExam = async (req, res) => {
         isPublished: updatedExam.isPublished,
         publishedAt: updatedExam.publishedAt,
         state: updatedExam.state,
-        totalPoints: updatedExam.totalPoints,
         totalQuestions: updatedExam.examQuestions.length,
         course: updatedExam.course,
         examiner: updatedExam.examiner
@@ -1015,15 +1185,22 @@ exports.publishExam = async (req, res) => {
 
   } catch (err) {
     console.error('💥 Error publishing exam:', err);
+    console.error('Error details:', {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      meta: err.meta
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Failed to publish exam',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      code: err.code
     });
   }
 };
 
-// Optional: Add an unpublish controller
 exports.unpublishExam = async (req, res) => {
   const { examId } = req.params;
   const examinerId = req.user.userId;

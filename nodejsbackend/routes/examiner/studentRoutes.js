@@ -8,6 +8,9 @@ router.get('/student/:studentId', authenticate, examinerOnly, studentController.
 router.get('/student/:studentId/edit', authenticate, examinerOnly, studentController.getStudentForEdit);
 router.put('/student/:studentId', authenticate, examinerOnly, studentController.updateStudent);
 
+
+
+
 module.exports = router;
 
 /*
