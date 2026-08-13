@@ -1,6 +1,6 @@
 const express = require('express');
 
-//const { getUserStats } = require('../controllers/statsController');
+
 const { getUserStats} = require('@controllers/admin/statsController');
 const { authenticate } = require('@middlewares/auth');
 

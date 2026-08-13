@@ -2,6 +2,7 @@ const { prisma } = require('../../database');
 
 
 
+/*
 exports.getStudentResults = async (req, res) => {
   const studentId = req.student.studentId;
   
@@ -89,6 +90,233 @@ exports.getStudentResults = async (req, res) => {
     });
   }
 };
+*/
+exports.getStudentResults = async (req, res) => {
+  const studentId = req.student.studentId;
+  
+  try {
+    const results = await prisma.examResult.findMany({
+      where: { 
+        studentId: parseInt(studentId),
+        status: { in: ['COMPLETED', 'ARCHIVED'] }
+      },
+      include: {
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            course: {
+              select: {
+                code: true,
+                title: true
+              }
+            },
+            examiner: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            },
+            passingScore: true,
+            // Include the actual questions to know how many of each type
+            questions: {
+              select: {
+                id: true,
+                questionType: true
+              }
+            }
+          }
+        },
+        studentAnswers: {
+          include: {
+            question: {
+              select: {
+                questionText: true,
+                questionType: true,
+                correctAnswer: true,
+                // Include options for multiple choice
+                options: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { submittedAt: 'desc' }
+    });
+
+    // Process each result
+    const formattedResults = results.map(result => {
+      // Get actual total questions from the exam
+      const actualTotalQuestions = result.exam.questions.length;
+      
+      // Grade each answer properly
+      const gradedAnswers = result.studentAnswers.map(answer => {
+        let isCorrect = false;
+        const questionType = answer.question.questionType;
+        const studentResponse = answer.studentResponse?.trim() || '';
+        const correctAnswer = answer.question.correctAnswer?.trim() || '';
+
+        switch (questionType) {
+          case 'MULTIPLE_CHOICE':
+            // Exact match for multiple choice
+            isCorrect = studentResponse === correctAnswer;
+            break;
+
+          case 'TRUE_FALSE':
+            // Normalize case for true/false
+            isCorrect = studentResponse.toLowerCase() === correctAnswer.toLowerCase();
+            break;
+
+          case 'SHORT_ANSWER':
+            // Semantic comparison for short answers
+            // Option 1: Exact match (case insensitive)
+            // isCorrect = studentResponse.toLowerCase() === correctAnswer.toLowerCase();
+            
+            // Option 2: Contains key phrases (more flexible)
+            const keywords = correctAnswer.toLowerCase().split(/\s+/);
+            const studentWords = studentResponse.toLowerCase().split(/\s+/);
+            const matchCount = keywords.filter(word => 
+              studentWords.some(sw => sw.includes(word) || word.includes(sw))
+            ).length;
+            // Consider correct if 80% of keywords match
+            isCorrect = matchCount / keywords.length >= 0.8;
+            
+            // Option 3: Use Levenshtein distance or other similarity metrics
+            // const similarity = calculateSimilarity(studentResponse, correctAnswer);
+            // isCorrect = similarity >= 0.7;
+            break;
+
+          case 'ESSAY':
+            // Essays are typically graded manually
+            // Use the existing isCorrect from database if graded
+            isCorrect = answer.isCorrect || false;
+            break;
+
+          case 'FILL_BLANK':
+            // Case insensitive exact match
+            isCorrect = studentResponse.toLowerCase() === correctAnswer.toLowerCase();
+            break;
+
+          case 'MATCHING':
+            // Could be complex - use database value
+            isCorrect = answer.isCorrect || false;
+            break;
+
+          default:
+            isCorrect = answer.isCorrect || false;
+        }
+
+        return {
+          ...answer,
+          isCorrect: isCorrect,
+          gradedAt: new Date().toISOString()
+        };
+      });
+
+      // Count correct answers
+      const correctCount = gradedAnswers.filter(a => a.isCorrect === true).length;
+      
+      // Calculate percentage based on ALL questions in the exam
+      const percentage = actualTotalQuestions > 0 
+        ? (correctCount / actualTotalQuestions) * 100 
+        : 0;
+
+      // Update the result with the correct counts
+      return {
+        id: result.id,
+        exam: {
+          ...result.exam,
+          questionCount: actualTotalQuestions
+        },
+        score: result.score || correctCount,
+        percentage: parseFloat(percentage.toFixed(2)),
+        correctAnswers: correctCount,
+        totalQuestions: actualTotalQuestions,
+        status: result.status,
+        submittedAt: result.submittedAt,
+        timeSpent: result.timeSpent,
+        grade: calculateGrade(percentage, result.exam.passingScore || 60),
+        isPassed: percentage >= (result.exam.passingScore || 60),
+        answers: gradedAnswers.map(answer => ({
+          question: answer.question.questionText,
+          questionType: answer.question.questionType,
+          studentAnswer: answer.studentResponse,
+          correctAnswer: answer.question.correctAnswer,
+          isCorrect: answer.isCorrect,
+          options: answer.question.options
+        })),
+        // Summary by question type
+        summary: {
+          totalQuestions: actualTotalQuestions,
+          correctCount: correctCount,
+          byType: gradedAnswers.reduce((acc, answer) => {
+            const type = answer.question.questionType;
+            if (!acc[type]) {
+              acc[type] = { total: 0, correct: 0 };
+            }
+            acc[type].total++;
+            if (answer.isCorrect) acc[type].correct++;
+            return acc;
+          }, {})
+        }
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      studentId,
+      totalResults: results.length,
+      results: formattedResults
+    });
+  } catch (err) {
+    console.error('❌ Get student results error:', err);
+    res.status(500).json({
+      message: 'Failed to fetch results',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Helper function for similarity calculation (optional)
+function calculateSimilarity(str1, str2) {
+  // Levenshtein distance or other similarity metric
+  // This is a simple implementation - you might want to use a library
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  const longerLength = longer.length;
+  if (longerLength === 0) return 1.0;
+  
+  return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
+
+function editDistance(s1, s2) {
+  s1 = s1.toLowerCase();
+  s2 = s2.toLowerCase();
+
+  let costs = new Array();
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else {
+        if (j > 0) {
+          let newValue = costs[j - 1];
+          if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+          }
+          costs[j - 1] = lastValue;
+          lastValue = newValue;
+        }
+      }
+    }
+    if (i > 0) {
+      costs[s2.length] = lastValue;
+    }
+  }
+  return costs[s2.length];
+}
 
 /**
  * Get detailed result for a specific exam

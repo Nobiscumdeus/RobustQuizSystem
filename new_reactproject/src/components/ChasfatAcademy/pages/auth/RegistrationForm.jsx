@@ -1,3 +1,4 @@
+import APP_CONFIG from '@/config/appConfig';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useNavigate, Link } from "react-router-dom";
@@ -86,7 +87,7 @@ const RegistrationForm = () => {
           className="text-center mb-8 max-w-2xl"
         >
           <h1 className="text-4xl md:text-5xl font-bold text-text-primary dark:text-gray-100 mb-4">
-            Join QuizMaster Today
+            Join {APP_CONFIG.name} Today
           </h1>
           <p className="text-text-secondary dark:text-gray-400 text-lg">
             Create your account and start your learning journey

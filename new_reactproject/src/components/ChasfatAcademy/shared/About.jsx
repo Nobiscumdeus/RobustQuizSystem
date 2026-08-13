@@ -1,3 +1,4 @@
+import APP_CONFIG from '@/config/appConfig';
 import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "./Footer";
@@ -102,7 +103,7 @@ const AboutPage = () => {
               variants={fadeIn}
               className="text-lg text-center mb-6 text-text-secondary"
             >
-              At <span className="font-bold text-primary">QuizMaster</span>, our mission is to enhance the educational experience through interactive quizzes
+              At <span className="font-bold text-primary">{APP_CONFIG.name}</span>, our mission is to enhance the educational experience through interactive quizzes
               that make learning engaging and effective. We believe that assessment should be fun, informative, and
               tailored to individual learning paths.
             </motion.p>
@@ -148,7 +149,7 @@ const AboutPage = () => {
               variants={fadeIn}
               className="text-3xl font-bold text-center mb-12 text-text-primary"
             >
-              Why Choose QuizMaster?
+              Why Choose {APP_CONFIG.name}?
             </motion.h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Feature Cards */}

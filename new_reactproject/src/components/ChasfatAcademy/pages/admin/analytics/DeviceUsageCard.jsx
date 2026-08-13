@@ -6,7 +6,7 @@ const DeviceUsageCard = ({ darkMode, data, isLoading, error, onRetry }) => {
 
   return (
     <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-4`}>
-      <h3 className="text-lg font-semibold mb-2">Device Usage</h3>
+      <h3 className="text-lg font-semibold mb-2">Device Usage Stats</h3>
 
       {isLoading ? (
         <div className="h-64 flex items-center justify-center">

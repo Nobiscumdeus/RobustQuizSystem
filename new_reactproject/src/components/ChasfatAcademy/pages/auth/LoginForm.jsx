@@ -1,3 +1,4 @@
+import APP_CONFIG from '@/config/appConfig';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useNavigate, Link, useLocation } from "react-router-dom";
@@ -5,7 +6,6 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import Footer from "../../shared/Footer";
 import ScrollDownIcon from "../../utility/ScrollDownIcon";
-// REMOVE: import { setLoggedIn } from "../../utility/auth"; // Old localStorage approach
 import { useAuthLogin } from "@hooks/useAuth"; // ← NEW: Use our custom hook
 
 const containerVariants = {
@@ -85,7 +85,7 @@ const LoginForm = () => {
           className="text-center mb-8 max-w-2xl"
         >
           <h1 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
-            Welcome Back to QuizMaster
+            Welcome Back to {APP_CONFIG.name}
           </h1>
           <p className="text-text-secondary text-lg">
             Sign in to access your personalized learning dashboard

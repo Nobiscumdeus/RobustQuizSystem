@@ -8,7 +8,7 @@ function Footer() {
           {/* Copyright */}
           <div className="mb-4 md:mb-0 text-center md:text-left">
             <p className="text-text-primary font-medium">
-              © {new Date().getFullYear()} QuizMaster. All rights reserved.
+              © {new Date().getFullYear()} ChasfatProjects. All rights reserved.
             </p>
             <p className="text-text-tertiary text-sm mt-1">
               Empowering education through technology

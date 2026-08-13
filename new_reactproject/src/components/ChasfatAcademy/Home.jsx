@@ -1,3 +1,5 @@
+import APP_CONFIG from '@/config/appConfig';
+
 import { Link } from "react-router-dom";
 
 import Footer from "@components/ChasfatAcademy/shared/Footer";
@@ -68,7 +70,7 @@ const Home = () => {
             transition={{ duration: 1 }}
             className="text-4xl md:text-5xl font-bold mb-4"
           >
-            QuizMaster - Digital Examination Platform
+          {APP_CONFIG.name} - Digital Examination Platform
           </motion.h2>
 
           <motion.p 

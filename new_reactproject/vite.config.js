@@ -30,6 +30,7 @@ export default defineConfig({
       '@styles': path.resolve(__dirname, './src/styles'),
       '@api': path.resolve(__dirname, './src/api'),
       '@selectors': path.resolve(__dirname, './src/selectors'),
+      '@config':path.resolve(__dirname,'./src/config'),
       
     }
   },

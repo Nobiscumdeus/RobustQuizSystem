@@ -1,13 +1,10 @@
-
+import APP_CONFIG from '@/config/appConfig';
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa'; 
 import useOnlineStatus from '../utility/OnlineStatusBar';
 import { motion } from 'framer-motion';
-//import { useDispatch, useSelector } from 'react-redux';
-//import { logoutUser } from '../../../actions/authActions';
-//import { checkAuthStatus, logout } from '../utility/auth';
 import { useCurrentUser, useAuthLogout} from "@hooks/useAuth";
 
 import { useTheme } from '@/hooks/useTheme';
@@ -79,7 +76,7 @@ return (
   
 
       <h1 className="text-2xl font-bold text-primary/80 hover:text-primary transition-colors">
-        QuizMaster
+        {APP_CONFIG.name}
       </h1>
 
 
